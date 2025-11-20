@@ -5,6 +5,10 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/ncondes/go/social/internal/config"
+	"github.com/ncondes/go/social/internal/db"
+	"github.com/ncondes/go/social/internal/handlers"
+	"github.com/ncondes/go/social/internal/repositories"
+	"github.com/ncondes/go/social/internal/services"
 )
 
 func main() {
@@ -13,10 +17,29 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	cfg := config.Load()
+	config := config.Load()
+
+	db, err := db.New(
+		config.DB.Addr,
+		config.DB.MaxOpenConns,
+		config.DB.MaxIdleConns,
+		config.DB.MaxIdleTime,
+	)
+	if err != nil {
+		log.Println(err)
+		log.Fatal("Error connecting to database")
+	}
+
+	log.Println("Connected to database successfully")
+	defer db.Close()
+
+	repositories := repositories.New(db)
+	services := services.New(repositories)
+	handlers := handlers.New(services)
 
 	app := &application{
-		config: cfg,
+		config:   config,
+		handlers: handlers,
 	}
 
 	mux := app.mount()

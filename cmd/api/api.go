@@ -30,7 +30,15 @@ func (app *application) mount() *chi.Mux {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Route("/v1", func(r chi.Router) {
-		r.Get("/health", app.handlers.Health.Check)
+		r.Get("/health", app.handlers.HealthHandler.Check)
+
+		r.Route("/users", func(r chi.Router) {
+			r.Post("/", app.handlers.UserHandler.CreateUser)
+		})
+
+		r.Route("/posts", func(r chi.Router) {
+			r.Post("/", app.handlers.PostHandler.CreatePost)
+		})
 	})
 
 	return r

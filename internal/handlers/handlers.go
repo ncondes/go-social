@@ -1,11 +1,19 @@
 package handlers
 
+import "github.com/ncondes/go/social/internal/services"
+
 type Handlers struct {
-	Health *Health
+	HealthHandler *HealthHandler
+	UserHandler   *UserHandler
+	PostHandler   *PostHandler
 }
 
-func New() *Handlers {
+func New(
+	services *services.Services,
+) *Handlers {
 	return &Handlers{
-		Health: &Health{},
+		HealthHandler: NewHealthHandler(),
+		UserHandler:   NewUserHandler(services.UserService),
+		PostHandler:   NewPostHandler(services.PostService),
 	}
 }
