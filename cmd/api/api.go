@@ -38,6 +38,19 @@ func (app *application) mount() *chi.Mux {
 
 		r.Route("/posts", func(r chi.Router) {
 			r.Post("/", app.handlers.PostHandler.CreatePost)
+
+			r.Route("/{postID}", func(r chi.Router) {
+				r.Use(handlers.PostIDMiddleware)
+
+				r.Get("/", app.handlers.PostHandler.GetPost)
+				r.Patch("/", app.handlers.PostHandler.UpdatePost)
+				r.Delete("/", app.handlers.PostHandler.DeletePost)
+
+				r.Route("/comments", func(r chi.Router) {
+					r.Post("/", app.handlers.CommentHandler.CreateComment)
+					r.Get("/", app.handlers.CommentHandler.GetCommentsByPostID)
+				})
+			})
 		})
 	})
 

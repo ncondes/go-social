@@ -2,14 +2,28 @@ package handlers
 
 import (
 	"net/http"
+
+	"github.com/ncondes/go/social/internal/config"
 )
 
-type HealthHandler struct{}
+type HealthHandler struct {
+	config *config.Config
+}
 
-func NewHealthHandler() *HealthHandler {
-	return &HealthHandler{}
+func NewHealthHandler(config *config.Config) *HealthHandler {
+	return &HealthHandler{
+		config: config,
+	}
 }
 
 func (h *HealthHandler) Check(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("OK"))
+	data := map[string]string{
+		"status": "ok",
+		"env":    h.config.Env,
+	}
+
+	if err := writeJSONResponse(w, http.StatusOK, data); err != nil {
+		handleInternalServerError(w, r, err)
+		return
+	}
 }

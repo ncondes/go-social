@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"time"
 )
 
@@ -19,3 +20,7 @@ type User struct {
 type UserRepository interface {
 	Create(ctx context.Context, user *User) error
 }
+
+var (
+	ErrUserNotFound = errors.New("user not found")
+)

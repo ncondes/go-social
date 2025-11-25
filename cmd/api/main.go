@@ -35,7 +35,7 @@ func main() {
 
 	repositories := repositories.New(db)
 	services := services.New(repositories)
-	handlers := handlers.New(services)
+	handlers := handlers.New(config, services)
 
 	app := &application{
 		config:   config,

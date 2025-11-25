@@ -2,7 +2,10 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"time"
+
+	"github.com/ncondes/go/social/internal/dtos"
 )
 
 type Post struct {
@@ -17,4 +20,11 @@ type Post struct {
 
 type PostRepository interface {
 	Create(ctx context.Context, post *Post) error
+	GetByID(ctx context.Context, postID int64) (*dtos.PostResponseDTO, error)
+	Update(ctx context.Context, post *Post) error
+	Delete(ctx context.Context, postID int64) error
 }
+
+var (
+	ErrPostNotFound = errors.New("post not found")
+)

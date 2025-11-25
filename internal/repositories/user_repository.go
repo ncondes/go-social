@@ -16,13 +16,18 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 
 func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
-	query := `INSERT INTO users (username, email, password)
-	VALUES ($1, $2, $3)
+	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
+	defer cancel()
+
+	query := `INSERT INTO users (first_name, last_name, username, email, password)
+	VALUES ($1, $2, $3, $4, $5)
 	RETURNING id, created_at, updated_at`
 
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
+		user.FirstName,
+		user.LastName,
 		user.Username,
 		user.Email,
 		user.Password,
@@ -32,7 +37,7 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
 		&user.UpdatedAt,
 	)
 	if err != nil {
-		return err
+		return handleDBError(err, resourceUser)
 	}
 
 	return nil

@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Addr string
 	DB   DBConfig
+	Env  string
 }
 
 type DBConfig struct {
@@ -28,5 +29,6 @@ func Load() *Config {
 			MaxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 5),
 			MaxIdleTime:  env.GetDuration("DB_MAX_IDLE_TIME", 5*time.Minute),
 		},
+		Env: env.GetString("ENV", "development"),
 	}
 }

@@ -1,5 +1,5 @@
 include .env
-MIGRATIONS_PATH = ./cmd/migrate/migrations
+MIGRATIONS_PATH = ./cmd/db/migrations
 
 .PHONY: migrate-create
 migration:
@@ -18,6 +18,12 @@ migrate-down:
 	@echo "Rolling back migrations..."
 	@migrate -path $(MIGRATIONS_PATH) -database $(DB_ADDR) down
 	@echo "Migrations rolled back successfully"
+
+.PHONY: seed
+seed:
+	@echo "Seeding database..."
+	@go run cmd/db/seed/main.go
+	@echo "Database seeded successfully"
 
 %:
 	@: 
