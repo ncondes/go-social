@@ -12,90 +12,6 @@ import (
 	"github.com/ncondes/go/social/internal/repositories"
 )
 
-const (
-	usersAmount    = 50
-	postsAmount    = 100
-	commentsAmount = 200
-)
-
-var seedFirstNames = []string{
-	"James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda",
-	"William", "Barbara", "David", "Elizabeth", "Richard", "Susan", "Joseph", "Jessica",
-	"Thomas", "Sarah", "Charles", "Karen",
-}
-
-var seedLastNames = []string{
-	"Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis",
-	"Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas",
-	"Taylor", "Moore", "Jackson", "Martin",
-}
-
-var seedPostTitles = []string{
-	"Getting Started with Go", "Understanding Microservices", "Best Practices for REST APIs",
-	"Introduction to Docker", "Mastering Git Workflows", "Database Design Patterns",
-	"Clean Code Principles", "Testing Strategies in Go", "Building Scalable Systems",
-	"API Security Best Practices", "Concurrency in Go", "Error Handling Techniques",
-	"Performance Optimization Tips", "Debugging Like a Pro", "Code Review Guidelines",
-	"Refactoring Legacy Code", "Modern Web Development", "Cloud Architecture Basics",
-	"DevOps Fundamentals", "Continuous Integration Pipelines",
-}
-
-var seedPostContents = []string{
-	"This is a comprehensive guide to help you understand the fundamentals and best practices.",
-	"In this post, we'll explore various techniques and patterns that can improve your workflow.",
-	"Let me share some insights I've gained from years of experience in software development.",
-	"Here are some practical examples and code snippets to illustrate the key concepts.",
-	"This tutorial will walk you through step-by-step instructions with detailed explanations.",
-	"I've compiled a list of resources and tools that have been incredibly helpful in my journey.",
-	"Today we're diving deep into advanced topics that will take your skills to the next level.",
-	"Learn how to avoid common pitfalls and mistakes that many developers encounter.",
-	"This article covers everything you need to know to get started with this technology.",
-	"Discover the latest trends and innovations that are shaping the future of development.",
-	"A detailed analysis of different approaches and their trade-offs in real-world scenarios.",
-	"Practical tips and tricks that you can immediately apply to your projects.",
-	"Understanding the underlying principles will help you make better architectural decisions.",
-	"This guide includes benchmarks, comparisons, and recommendations based on extensive testing.",
-	"Explore the ecosystem and learn about the most popular libraries and frameworks.",
-	"Real-world case studies demonstrating how these concepts are applied in production.",
-	"A beginner-friendly introduction with clear examples and easy-to-follow instructions.",
-	"Advanced techniques for optimizing performance and improving code quality.",
-	"Common questions answered with detailed explanations and working code examples.",
-	"Best practices from industry experts and lessons learned from large-scale projects.",
-}
-
-var seedPostTags = []string{
-	"golang", "programming", "webdev", "tutorial", "backend", "api", "database",
-	"docker", "kubernetes", "microservices", "testing", "security", "performance",
-	"architecture", "devops", "cloud", "bestpractices", "coding", "software", "tech",
-}
-
-var seedCommentContents = []string{
-	"Great post! Thanks for sharing this valuable information.",
-	"This is exactly what I was looking for. Very helpful!",
-	"Interesting perspective. I learned something new today.",
-	"Could you elaborate more on this topic? I'd love to know more.",
-	"Excellent explanation! Clear and concise.",
-	"I have a different approach that also works well in my experience.",
-	"Thanks for the detailed tutorial. It helped me solve my problem.",
-	"This is a must-read for anyone working with this technology.",
-	"Well written and easy to follow. Keep up the good work!",
-	"I disagree with some points, but overall a solid article.",
-	"Bookmarking this for future reference. Very useful!",
-	"Can you provide more examples? That would be really helpful.",
-	"I've been struggling with this, and your post clarified everything.",
-	"Amazing content! Looking forward to more posts like this.",
-	"This should be part of the official documentation. So clear!",
-	"I tried this approach and it works perfectly. Thanks!",
-	"Insightful post. You covered all the important aspects.",
-	"Quick question: does this work with the latest version?",
-	"Fantastic write-up! Sharing this with my team.",
-	"This helped me understand the concept much better. Appreciate it!",
-}
-
-var seedEmailDomains = []string{
-	"gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "apple.com",
-}
-
 func Flush(db *sql.DB) {
 	ctx := context.Background()
 
@@ -137,6 +53,14 @@ func Seed(r *repositories.Repositories) {
 		err := r.CommentRepository.Create(ctx, comment)
 		if err != nil {
 			log.Printf("Error seeding comments: %v\n", err)
+		}
+	}
+
+	followers := generateFollowers(users)
+	for _, follower := range followers {
+		err := r.FollowerRepository.FollowUser(ctx, follower.UserID, follower.FollowerID)
+		if err != nil {
+			log.Printf("Error seeding followers: %v\n", err)
 		}
 	}
 }
@@ -211,4 +135,55 @@ func generateComments(amount int, posts []*domain.Post, users []*domain.User) []
 	}
 
 	return comments
+}
+
+func generateFollowers(users []*domain.User) []*domain.Follower {
+	followers := make([]*domain.Follower, 0)
+	totalUsers := len(users)
+
+	for _, user := range users {
+		var numToFollow int
+		roll := rand.Float64()
+
+		switch {
+		case roll < 0.25: // 25% are casual users (5-15% of total)
+			min := int(float64(totalUsers) * 0.05)
+			max := int(float64(totalUsers) * 0.15)
+			numToFollow = min + rand.Intn(max-min+1)
+
+		case roll < 0.60: // 35% are regular users (15-35% of total)
+			min := int(float64(totalUsers) * 0.15)
+			max := int(float64(totalUsers) * 0.35)
+			numToFollow = min + rand.Intn(max-min+1)
+
+		case roll < 0.85: // 25% are active users (35-50% of total)
+			min := int(float64(totalUsers) * 0.35)
+			max := int(float64(totalUsers) * 0.50)
+			numToFollow = min + rand.Intn(max-min+1)
+
+		default: // 15% are power users (50-60% of total)
+			min := int(float64(totalUsers) * 0.50)
+			max := int(float64(totalUsers) * 0.60)
+			numToFollow = min + rand.Intn(max-min+1)
+		}
+
+		followed := make(map[int64]bool)
+
+		for len(followed) < numToFollow {
+			targetUser := users[rand.Intn(len(users))]
+
+			if targetUser.ID == user.ID || followed[targetUser.ID] {
+				continue // Skip if user already followed or self
+			}
+
+			followed[targetUser.ID] = true // Mark as followed
+
+			followers = append(followers, &domain.Follower{
+				UserID:     targetUser.ID,
+				FollowerID: user.ID,
+			})
+		}
+	}
+
+	return followers
 }

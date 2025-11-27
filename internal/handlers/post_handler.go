@@ -19,13 +19,13 @@ func NewPostHandler(postService *services.PostService) *PostHandler {
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	var createPostDTO *dtos.CreatePostDTO
 
-	if err := readJSON(w, r, &createPostDTO); err != nil {
-		writeJSONError(w, http.StatusBadRequest, err.Error())
+	if err := jsonDecode(w, r, &createPostDTO); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err := validateStruct(createPostDTO); err != nil {
-		writeJSONErrorMessages(w, http.StatusBadRequest, err)
+		respondWithErrors(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -37,11 +37,17 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.postService.CreatePost(r.Context(), &post); err != nil {
-		handleInternalServerError(w, r, err)
-		return
+		switch err {
+		case domain.ErrUserNotFound:
+			respondWithError(w, http.StatusNotFound, err.Error())
+			return
+		default:
+			handleInternalServerError(w, r, err)
+			return
+		}
 	}
 
-	if err := writeJSONResponse(w, http.StatusCreated, post); err != nil {
+	if err := respondWithData(w, http.StatusCreated, post); err != nil {
 		handleInternalServerError(w, r, err)
 		return
 	}
@@ -54,7 +60,7 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err {
 		case domain.ErrPostNotFound:
-			writeJSONError(w, http.StatusNotFound, err.Error())
+			respondWithError(w, http.StatusNotFound, err.Error())
 			return
 		default:
 			handleInternalServerError(w, r, err)
@@ -62,7 +68,7 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := writeJSONResponse(w, http.StatusOK, post); err != nil {
+	if err := respondWithData(w, http.StatusOK, post); err != nil {
 		handleInternalServerError(w, r, err)
 		return
 	}
@@ -73,19 +79,19 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 
 	var updatePostDTO *dtos.UpdatePostDTO
 
-	if err := readJSON(w, r, &updatePostDTO); err != nil {
-		writeJSONError(w, http.StatusBadRequest, err.Error())
+	if err := jsonDecode(w, r, &updatePostDTO); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	// TODO: should we make this shared? as a util
 	if updatePostDTO.Title == nil && updatePostDTO.Content == nil && updatePostDTO.Tags == nil {
-		writeJSONError(w, http.StatusBadRequest, "no fields to update")
+		respondWithError(w, http.StatusBadRequest, "no fields to update")
 		return
 	}
 
 	if err := validateStruct(updatePostDTO); err != nil {
-		writeJSONErrorMessages(w, http.StatusBadRequest, err)
+		respondWithErrors(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -109,7 +115,7 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	if err := h.postService.UpdatePost(r.Context(), &post); err != nil {
 		switch err {
 		case domain.ErrPostNotFound:
-			writeJSONError(w, http.StatusNotFound, err.Error())
+			respondWithError(w, http.StatusNotFound, err.Error())
 			return
 		default:
 			handleInternalServerError(w, r, err)
@@ -117,7 +123,7 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := writeJSONResponse(w, http.StatusOK, &post); err != nil {
+	if err := respondWithData(w, http.StatusOK, &post); err != nil {
 		handleInternalServerError(w, r, err)
 		return
 	}
@@ -129,7 +135,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	if err := h.postService.DeletePost(r.Context(), postID); err != nil {
 		switch err {
 		case domain.ErrPostNotFound:
-			writeJSONError(w, http.StatusNotFound, err.Error())
+			respondWithError(w, http.StatusNotFound, err.Error())
 			return
 		default:
 			handleInternalServerError(w, r, err)

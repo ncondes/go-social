@@ -21,13 +21,13 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 
 	var createCommentDTO *dtos.CreateCommentDTO
 
-	if err := readJSON(w, r, &createCommentDTO); err != nil {
-		writeJSONError(w, http.StatusBadRequest, err.Error())
+	if err := jsonDecode(w, r, &createCommentDTO); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err := validateStruct(createCommentDTO); err != nil {
-		writeJSONErrorMessages(w, http.StatusBadRequest, err)
+		respondWithErrors(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -40,7 +40,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	if err := h.commentService.CreateComment(r.Context(), &comment); err != nil {
 		switch err {
 		case domain.ErrPostNotFound:
-			writeJSONError(w, http.StatusNotFound, err.Error())
+			respondWithError(w, http.StatusNotFound, err.Error())
 			return
 		default:
 			handleInternalServerError(w, r, err)
@@ -48,7 +48,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := writeJSONResponse(w, http.StatusCreated, comment); err != nil {
+	if err := respondWithData(w, http.StatusCreated, comment); err != nil {
 		handleInternalServerError(w, r, err)
 		return
 	}
@@ -63,7 +63,7 @@ func (h *CommentHandler) GetCommentsByPostID(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err := writeJSONResponse(w, http.StatusOK, comments); err != nil {
+	if err := respondWithData(w, http.StatusOK, comments); err != nil {
 		handleInternalServerError(w, r, err)
 		return
 	}

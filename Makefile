@@ -19,11 +19,17 @@ migrate-down:
 	@migrate -path $(MIGRATIONS_PATH) -database $(DB_ADDR) down
 	@echo "Migrations rolled back successfully"
 
-.PHONY: seed
-seed:
+.PHONY: db-seed
+db-seed:
 	@echo "Seeding database..."
 	@go run cmd/db/seed/main.go
 	@echo "Database seeded successfully"
+
+.PHONY: db-flush
+db-flush:
+	@echo "Flushing database..."
+	@go run cmd/db/flush/main.go
+	@echo "Database flushed successfully"
 
 %:
 	@: 

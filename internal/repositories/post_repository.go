@@ -40,7 +40,7 @@ func (r *PostRepository) Create(ctx context.Context, post *domain.Post) error {
 		&post.UpdatedAt,
 	)
 	if err != nil {
-		return err
+		return handleDBError(err, resourcePost)
 	}
 
 	return nil

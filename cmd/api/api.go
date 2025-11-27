@@ -32,8 +32,21 @@ func (app *application) mount() *chi.Mux {
 	r.Route("/v1", func(r chi.Router) {
 		r.Get("/health", app.handlers.HealthHandler.Check)
 
+		r.Route("/feed", func(r chi.Router) {
+			// TODO: middleware for authentication
+			r.Get("/", app.handlers.FeedHandler.GetUserFeed)
+		})
+
 		r.Route("/users", func(r chi.Router) {
-			r.Post("/", app.handlers.UserHandler.CreateUser)
+			r.Post("/", app.handlers.UserHandler.CreateUser) // TODO: remove?
+
+			r.Route("/{userID}", func(r chi.Router) {
+				r.Use(handlers.UserIDMiddleware)
+
+				r.Get("/", app.handlers.UserHandler.GetUser)
+				r.Post("/follow", app.handlers.UserHandler.FollowUser)
+				r.Delete("/unfollow", app.handlers.UserHandler.UnfollowUser)
+			})
 		})
 
 		r.Route("/posts", func(r chi.Router) {

@@ -10,6 +10,7 @@ type Handlers struct {
 	UserHandler    *UserHandler
 	PostHandler    *PostHandler
 	CommentHandler *CommentHandler
+	FeedHandler    *FeedHandler
 }
 
 func New(
@@ -21,5 +22,6 @@ func New(
 		UserHandler:    NewUserHandler(services.UserService),
 		PostHandler:    NewPostHandler(services.PostService),
 		CommentHandler: NewCommentHandler(services.CommentService),
+		FeedHandler:    NewFeedHandler(services.FeedService),
 	}
 }

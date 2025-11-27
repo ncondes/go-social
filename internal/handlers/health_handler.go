@@ -22,7 +22,7 @@ func (h *HealthHandler) Check(w http.ResponseWriter, r *http.Request) {
 		"env":    h.config.Env,
 	}
 
-	if err := writeJSONResponse(w, http.StatusOK, data); err != nil {
+	if err := respondWithData(w, http.StatusOK, data); err != nil {
 		handleInternalServerError(w, r, err)
 		return
 	}
