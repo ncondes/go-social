@@ -5,14 +5,13 @@ import (
 
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/dtos"
-	"github.com/ncondes/go/social/internal/services"
 )
 
 type PostHandler struct {
-	postService *services.PostService
+	postService domain.PostServiceInterface
 }
 
-func NewPostHandler(postService *services.PostService) *PostHandler {
+func NewPostHandler(postService domain.PostServiceInterface) *PostHandler {
 	return &PostHandler{postService: postService}
 }
 
@@ -54,9 +53,9 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
-	postID := GetPostIDFromContext(r.Context())
+	postID := getPostIDFromContext(r.Context())
 
-	post, err := h.postService.GetPost(r.Context(), postID)
+	postWithDetails, err := h.postService.GetPost(r.Context(), postID)
 	if err != nil {
 		switch err {
 		case domain.ErrPostNotFound:
@@ -68,14 +67,16 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := respondWithData(w, http.StatusOK, post); err != nil {
+	response := new(dtos.PostResponseDTO).FromDomain(postWithDetails)
+
+	if err := respondWithData(w, http.StatusOK, response); err != nil {
 		handleInternalServerError(w, r, err)
 		return
 	}
 }
 
 func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
-	postID := GetPostIDFromContext(r.Context())
+	postID := getPostIDFromContext(r.Context())
 
 	var updatePostDTO *dtos.UpdatePostDTO
 
@@ -130,7 +131,7 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
-	postID := GetPostIDFromContext(r.Context())
+	postID := getPostIDFromContext(r.Context())
 
 	if err := h.postService.DeletePost(r.Context(), postID); err != nil {
 		switch err {

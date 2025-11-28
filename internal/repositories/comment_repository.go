@@ -5,7 +5,6 @@ import (
 	"database/sql"
 
 	"github.com/ncondes/go/social/internal/domain"
-	"github.com/ncondes/go/social/internal/dtos"
 )
 
 type CommentRepository struct {
@@ -43,7 +42,7 @@ func (r *CommentRepository) Create(ctx context.Context, comment *domain.Comment)
 	return nil
 }
 
-func (r *CommentRepository) GetManyByPostID(ctx context.Context, postID int64) ([]*dtos.CommentResponseDTO, error) {
+func (r *CommentRepository) GetManyByPostID(ctx context.Context, postID int64) ([]*domain.CommentWithAuthor, error) {
 	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
 	defer cancel()
 
@@ -51,11 +50,17 @@ func (r *CommentRepository) GetManyByPostID(ctx context.Context, postID int64) (
 	SELECT
 		c.id,
 		c.post_id,
+		c.user_id,
 		c.content,
 		c.created_at,
 		c.updated_at,
 		u.id,
-		u.username
+		u.first_name,
+		u.last_name,
+		u.username,
+		u.email,
+		u.created_at,
+		u.updated_at
 	FROM comments c
 	JOIN users u ON c.user_id = u.id
 	WHERE c.post_id = $1
@@ -68,24 +73,30 @@ func (r *CommentRepository) GetManyByPostID(ctx context.Context, postID int64) (
 
 	defer rows.Close()
 
-	var comments []*dtos.CommentResponseDTO
+	var comments []*domain.CommentWithAuthor
 
 	for rows.Next() {
-		var comment dtos.CommentResponseDTO
+		var result domain.CommentWithAuthor
 
 		if err := rows.Scan(
-			&comment.ID,
-			&comment.PostID,
-			&comment.Content,
-			&comment.CreatedAt,
-			&comment.UpdatedAt,
-			&comment.Author.ID,
-			&comment.Author.Username,
+			&result.Comment.ID,
+			&result.Comment.PostID,
+			&result.Comment.UserID,
+			&result.Comment.Content,
+			&result.Comment.CreatedAt,
+			&result.Comment.UpdatedAt,
+			&result.Author.ID,
+			&result.Author.FirstName,
+			&result.Author.LastName,
+			&result.Author.Username,
+			&result.Author.Email,
+			&result.Author.CreatedAt,
+			&result.Author.UpdatedAt,
 		); err != nil {
 			return nil, handleDBError(err, resourceComment)
 		}
 
-		comments = append(comments, &comment)
+		comments = append(comments, &result)
 	}
 
 	return comments, nil

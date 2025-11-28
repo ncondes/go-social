@@ -17,9 +17,20 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type UserRepository interface {
+func (u *User) FullName() string {
+	return u.FirstName + " " + u.LastName
+}
+
+type UserRepositoryInterface interface {
 	Create(ctx context.Context, user *User) error
 	GetUser(ctx context.Context, id int64) (*User, error)
+}
+
+type UserServiceInterface interface {
+	CreateUser(ctx context.Context, user *User) error
+	GetUser(ctx context.Context, id int64) (*User, error)
+	FollowUser(ctx context.Context, userID int64, followerID int64) error
+	UnfollowUser(ctx context.Context, userID int64, followerID int64) error
 }
 
 var (

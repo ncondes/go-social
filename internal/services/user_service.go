@@ -7,11 +7,11 @@ import (
 )
 
 type UserService struct {
-	userRepository     domain.UserRepository
-	followerRepository domain.FollowerRepository
+	userRepository     domain.UserRepositoryInterface
+	followerRepository domain.FollowerRepositoryInterface
 }
 
-func NewUserService(userRepository domain.UserRepository, followerRepository domain.FollowerRepository) *UserService {
+func NewUserService(userRepository domain.UserRepositoryInterface, followerRepository domain.FollowerRepositoryInterface) *UserService {
 	return &UserService{userRepository: userRepository, followerRepository: followerRepository}
 }
 

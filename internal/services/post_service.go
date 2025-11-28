@@ -4,14 +4,13 @@ import (
 	"context"
 
 	"github.com/ncondes/go/social/internal/domain"
-	"github.com/ncondes/go/social/internal/dtos"
 )
 
 type PostService struct {
-	postRepository domain.PostRepository
+	postRepository domain.PostRepositoryInterface
 }
 
-func NewPostService(postRepository domain.PostRepository) *PostService {
+func NewPostService(postRepository domain.PostRepositoryInterface) *PostService {
 	return &PostService{postRepository: postRepository}
 }
 
@@ -19,7 +18,7 @@ func (s *PostService) CreatePost(ctx context.Context, post *domain.Post) error {
 	return s.postRepository.Create(ctx, post)
 }
 
-func (s *PostService) GetPost(ctx context.Context, postID int64) (*dtos.PostResponseDTO, error) {
+func (s *PostService) GetPost(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
 	return s.postRepository.GetByID(ctx, postID)
 }
 

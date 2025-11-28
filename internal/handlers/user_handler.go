@@ -4,14 +4,13 @@ import (
 	"net/http"
 
 	"github.com/ncondes/go/social/internal/domain"
-	"github.com/ncondes/go/social/internal/services"
 )
 
 type UserHandler struct {
-	userService *services.UserService
+	userService domain.UserServiceInterface
 }
 
-func NewUserHandler(userService *services.UserService) *UserHandler {
+func NewUserHandler(userService domain.UserServiceInterface) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 
@@ -34,7 +33,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
-	userID := GetUserIDFromContext(r.Context())
+	userID := getUserIDFromContext(r.Context())
 
 	user, err := h.userService.GetUser(r.Context(), userID)
 	if err != nil {
@@ -55,7 +54,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
-	userID := GetUserIDFromContext(r.Context())
+	userID := getUserIDFromContext(r.Context())
 	// TODO: get follower ID from auth middleware in the future
 	followerID := int64(1)
 
@@ -78,7 +77,7 @@ func (h *UserHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
-	userID := GetUserIDFromContext(r.Context())
+	userID := getUserIDFromContext(r.Context())
 	// TODO: get follower ID from auth middleware in the future
 	followerID := int64(1)
 

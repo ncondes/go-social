@@ -44,12 +44,3 @@ func respondWithData(w http.ResponseWriter, status int, data any) error {
 
 	return jsonEncode(w, status, &envelope{Data: data})
 }
-
-func respondWithPagination(w http.ResponseWriter, status int, data any, meta any) error {
-	type envelope struct {
-		Data       any `json:"data"`
-		Pagination any `json:"pagination"`
-	}
-
-	return jsonEncode(w, status, &envelope{Data: data, Pagination: meta})
-}

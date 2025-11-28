@@ -1,20 +1,42 @@
 package dtos
 
-import "time"
+import (
+	"time"
+
+	"github.com/ncondes/go/social/internal/domain"
+)
 
 type FeedPostResponseDTO struct {
-	ID              int64         `json:"id"`
-	Title           string        `json:"title"`
-	Content         string        `json:"content"`
-	Tags            []string      `json:"tags"`
-	Author          AuthorInfoDTO `json:"author"`
-	CreatedAt       time.Time     `json:"created_at"`
-	UpdatedAt       time.Time     `json:"updated_at"`
-	CommentCount    int           `json:"comment_count"`
-	RecencyScore    float64       `json:"-"`
-	EngagementScore float64       `json:"-"`
-	TagScore        float64       `json:"-"`
-	TotalScore      float64       `json:"-"`
+	ID           int64         `json:"id"`
+	Title        string        `json:"title"`
+	Content      string        `json:"content"`
+	Tags         []string      `json:"tags"`
+	CreatedAt    time.Time     `json:"created_at"`
+	UpdatedAt    time.Time     `json:"updated_at"`
+	Author       AuthorInfoDTO `json:"author"`
+	CommentCount int           `json:"comment_count"`
 }
 
-type PaginatedFeedResponseDTO = CursorBasedPaginationResponseDTO[*FeedPostResponseDTO]
+func (dto *FeedPostResponseDTO) FromDomain(feedPost *domain.FeedPost) *FeedPostResponseDTO {
+	response := &FeedPostResponseDTO{
+		ID:        feedPost.Post.ID,
+		Title:     feedPost.Post.Title,
+		Content:   feedPost.Post.Content,
+		Tags:      feedPost.Post.Tags,
+		CreatedAt: feedPost.Post.CreatedAt,
+		UpdatedAt: feedPost.Post.UpdatedAt,
+		Author: AuthorInfoDTO{
+			ID:       feedPost.Author.ID,
+			Username: feedPost.Author.Username,
+			Fullname: feedPost.Author.FullName(),
+		},
+		CommentCount: feedPost.CommentCount,
+	}
+
+	return response
+}
+
+type FeedResponseDTO struct {
+	Posts      []*FeedPostResponseDTO    `json:"posts"`
+	Pagination CursorBasedPaginationMeta `json:"pagination"`
+}

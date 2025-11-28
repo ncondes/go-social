@@ -6,28 +6,17 @@ import (
 	"sync"
 
 	"github.com/ncondes/go/social/internal/domain"
-	"github.com/ncondes/go/social/internal/dtos"
-	"github.com/ncondes/go/social/packages/pagination"
 )
 
 type FeedService struct {
-	feedRepository domain.FeedRepository
+	feedRepository domain.FeedRepositoryInterface
 }
 
-type FeedResult struct {
-	Posts      []*dtos.FeedPostResponseDTO
-	NextCursor string
-}
-
-func NewFeedService(feedRepository domain.FeedRepository) *FeedService {
+func NewFeedService(feedRepository domain.FeedRepositoryInterface) *FeedService {
 	return &FeedService{feedRepository: feedRepository}
 }
 
-// GetUserFeed retrieves and ranks posts using a weighted algorithm:
-// - Recency (40%): Newer posts prioritized
-// - Engagement (30%): Posts with more comments rank higher
-// - Tag Interest (30%): Posts matching user's comment history get boosted
-func (s *FeedService) GetUserFeed(ctx context.Context, userID int64, options *domain.FeedQueryOptions) (*FeedResult, error) {
+func (s *FeedService) GetUserFeed(ctx context.Context, userID int64, options *domain.FeedQueryOptions) ([]*domain.FeedPost, error) {
 	tagInterests, feed, err := s.fetchFeedData(ctx, userID, options)
 	if err != nil {
 		return nil, err
@@ -35,21 +24,13 @@ func (s *FeedService) GetUserFeed(ctx context.Context, userID int64, options *do
 
 	s.rankFeed(feed, tagInterests)
 
-	nextCursor, err := s.buildNextCursor(feed, options.Pagination.Limit)
-	if err != nil {
-		return nil, err
-	}
-
-	return &FeedResult{
-		Posts:      feed,
-		NextCursor: nextCursor,
-	}, nil
+	return feed, nil
 }
 
-func (s *FeedService) fetchFeedData(ctx context.Context, userID int64, options *domain.FeedQueryOptions) (map[string]int, []*dtos.FeedPostResponseDTO, error) {
+func (s *FeedService) fetchFeedData(ctx context.Context, userID int64, options *domain.FeedQueryOptions) (map[string]int, []*domain.FeedPost, error) {
 	var (
 		tagInterests map[string]int
-		feed         []*dtos.FeedPostResponseDTO
+		feed         []*domain.FeedPost
 		tagErr       error
 		feedErr      error
 		wg           sync.WaitGroup
@@ -80,7 +61,7 @@ func (s *FeedService) fetchFeedData(ctx context.Context, userID int64, options *
 	return tagInterests, feed, nil
 }
 
-func (s *FeedService) rankFeed(feed []*dtos.FeedPostResponseDTO, tagInterests map[string]int) {
+func (s *FeedService) rankFeed(feed []*domain.FeedPost, tagInterests map[string]int) {
 	if len(feed) == 0 {
 		return
 	}
@@ -108,8 +89,8 @@ func (s *FeedService) getMaxEngagement(interests map[string]int) int {
 	return max
 }
 
-func (s *FeedService) calculatePostScore(post *dtos.FeedPostResponseDTO, tagInterests map[string]int, maxEngagement int) {
-	post.TagScore = s.calculateTagScore(post.Tags, tagInterests, maxEngagement)
+func (s *FeedService) calculatePostScore(post *domain.FeedPost, tagInterests map[string]int, maxEngagement int) {
+	post.TagScore = s.calculateTagScore(post.Post.Tags, tagInterests, maxEngagement)
 	post.TotalScore = s.calculateFinalScore(post.RecencyScore, post.EngagementScore, post.TagScore)
 }
 
@@ -137,16 +118,4 @@ func (s *FeedService) calculateFinalScore(recency, engagement, tagScore float64)
 	)
 
 	return (recency * recencyWeight) + (engagement * engagementWeight) + (tagScore * tagWeight)
-}
-
-func (s *FeedService) buildNextCursor(feed []*dtos.FeedPostResponseDTO, limit int) (string, error) {
-	if len(feed) < limit {
-		return "", nil
-	}
-
-	lastPost := feed[len(feed)-1]
-	return pagination.EncodeCursor(domain.FeedCursor{
-		CreatedAt: lastPost.CreatedAt,
-		ID:        lastPost.ID,
-	})
 }

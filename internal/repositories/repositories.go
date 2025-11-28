@@ -12,11 +12,11 @@ const (
 )
 
 type Repositories struct {
-	UserRepository     domain.UserRepository
-	PostRepository     domain.PostRepository
-	CommentRepository  domain.CommentRepository
-	FollowerRepository domain.FollowerRepository
-	FeedRepository     domain.FeedRepository
+	UserRepository     domain.UserRepositoryInterface
+	PostRepository     domain.PostRepositoryInterface
+	CommentRepository  domain.CommentRepositoryInterface
+	FollowerRepository domain.FollowerRepositoryInterface
+	FeedRepository     domain.FeedRepositoryInterface
 }
 
 func New(db *sql.DB) *Repositories {

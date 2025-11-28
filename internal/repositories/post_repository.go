@@ -8,7 +8,6 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/ncondes/go/social/internal/domain"
-	"github.com/ncondes/go/social/internal/dtos"
 )
 
 type PostRepository struct {
@@ -46,7 +45,7 @@ func (r *PostRepository) Create(ctx context.Context, post *domain.Post) error {
 	return nil
 }
 
-func (r *PostRepository) GetByID(ctx context.Context, postID int64) (*dtos.PostResponseDTO, error) {
+func (r *PostRepository) GetByID(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
 	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
 	defer cancel()
 
@@ -56,11 +55,16 @@ func (r *PostRepository) GetByID(ctx context.Context, postID int64) (*dtos.PostR
 		p.title,
 		p.content,
 		p.tags,
+		p.user_id,
 		p.created_at,
 		p.updated_at,
 		u.id,
+		u.first_name,
+		u.last_name,
 		u.username,
-		CONCAT(u.first_name, ' ', u.last_name) AS fullname,
+		u.email,
+		u.created_at,
+		u.updated_at,
 		COUNT(c.id) AS comment_count
 	FROM posts p
 	JOIN users u ON p.user_id = u.id
@@ -70,25 +74,30 @@ func (r *PostRepository) GetByID(ctx context.Context, postID int64) (*dtos.PostR
 
 	row := r.db.QueryRowContext(ctx, query, postID)
 
-	var post dtos.PostResponseDTO
+	var result domain.PostWithDetails
 
 	err := row.Scan(
-		&post.ID,
-		&post.Title,
-		&post.Content,
-		pq.Array(&post.Tags),
-		&post.CreatedAt,
-		&post.UpdatedAt,
-		&post.Author.ID,
-		&post.Author.Username,
-		&post.Author.Fullname,
-		&post.CommentCount,
+		&result.Post.ID,
+		&result.Post.Title,
+		&result.Post.Content,
+		pq.Array(&result.Post.Tags),
+		&result.Post.UserID,
+		&result.Post.CreatedAt,
+		&result.Post.UpdatedAt,
+		&result.Author.ID,
+		&result.Author.FirstName,
+		&result.Author.LastName,
+		&result.Author.Username,
+		&result.Author.Email,
+		&result.Author.CreatedAt,
+		&result.Author.UpdatedAt,
+		&result.CommentCount,
 	)
 	if err != nil {
 		return nil, handleDBError(err, resourcePost)
 	}
 
-	return &post, nil
+	return &result, nil
 }
 
 func (r *PostRepository) Update(ctx context.Context, post *domain.Post) error {

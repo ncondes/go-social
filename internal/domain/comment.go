@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"time"
-
-	"github.com/ncondes/go/social/internal/dtos"
 )
 
 type Comment struct {
@@ -17,10 +15,20 @@ type Comment struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type CommentRepository interface {
+type CommentWithAuthor struct {
+	Comment
+	Author User
+}
+
+type CommentRepositoryInterface interface {
 	Create(ctx context.Context, comment *Comment) error
-	GetManyByPostID(ctx context.Context, postID int64) ([]*dtos.CommentResponseDTO, error)
+	GetManyByPostID(ctx context.Context, postID int64) ([]*CommentWithAuthor, error)
 	GetCountByPostID(ctx context.Context, postID int64) (int, error)
+}
+
+type CommentServiceInterface interface {
+	CreateComment(ctx context.Context, comment *Comment) error
+	GetCommentsByPostID(ctx context.Context, postID int64) ([]*CommentWithAuthor, error)
 }
 
 var (

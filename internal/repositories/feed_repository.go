@@ -8,7 +8,6 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/ncondes/go/social/internal/domain"
-	"github.com/ncondes/go/social/internal/dtos"
 )
 
 type FeedRepository struct {
@@ -19,7 +18,7 @@ func NewFeedRepository(db *sql.DB) *FeedRepository {
 	return &FeedRepository{db: db}
 }
 
-func (r *FeedRepository) GetUserFeed(ctx context.Context, userID int64, options *domain.FeedQueryOptions) ([]*dtos.FeedPostResponseDTO, error) {
+func (r *FeedRepository) GetUserFeed(ctx context.Context, userID int64, options *domain.FeedQueryOptions) ([]*domain.FeedPost, error) {
 	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
 	defer cancel()
 
@@ -27,36 +26,40 @@ func (r *FeedRepository) GetUserFeed(ctx context.Context, userID int64, options 
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		// TODO: think about resource here
 		return nil, handleDBError(err, resourcePost)
 	}
 
 	defer rows.Close()
 
-	var feeds []*dtos.FeedPostResponseDTO
+	var feeds []*domain.FeedPost
 
 	for rows.Next() {
-		var feed dtos.FeedPostResponseDTO
+		var result domain.FeedPost
+		var authorFirstName, authorLastName string
 
 		if err := rows.Scan(
-			&feed.ID,
-			&feed.Title,
-			&feed.Content,
-			pq.Array(&feed.Tags),
-			&feed.CreatedAt,
-			&feed.UpdatedAt,
-			&feed.Author.ID,
-			&feed.Author.Username,
-			&feed.Author.Fullname,
-			&feed.CommentCount,
-			&feed.RecencyScore,
-			&feed.EngagementScore,
+			&result.Post.ID,
+			&result.Post.Title,
+			&result.Post.Content,
+			pq.Array(&result.Post.Tags),
+			&result.Post.CreatedAt,
+			&result.Post.UpdatedAt,
+			&result.Author.ID,
+			&result.Author.Username,
+			&authorFirstName,
+			&authorLastName,
+			&result.CommentCount,
+			&result.RecencyScore,
+			&result.EngagementScore,
 		); err != nil {
-			// TODO: think about resource here
 			return nil, handleDBError(err, resourcePost)
 		}
 
-		feeds = append(feeds, &feed)
+		// Set author name fields
+		result.Author.FirstName = authorFirstName
+		result.Author.LastName = authorLastName
+
+		feeds = append(feeds, &result)
 	}
 
 	return feeds, nil
@@ -73,7 +76,8 @@ func (r *FeedRepository) buildFeedQuery(userID int64, options *domain.FeedQueryO
 			p.updated_at,
 			u.id AS author_id,
 			u.username,
-			CONCAT(u.first_name, ' ', u.last_name) AS fullname,
+			u.first_name,
+			u.last_name,
 			COUNT(c.id) AS comment_count,
 			-- Recency score (0-1, decays over time)
 			1.0 / (1.0 + EXTRACT(EPOCH FROM (NOW() - p.created_at)) / 86400.0) as recency_score,

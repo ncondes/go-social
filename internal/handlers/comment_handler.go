@@ -5,19 +5,18 @@ import (
 
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/dtos"
-	"github.com/ncondes/go/social/internal/services"
 )
 
 type CommentHandler struct {
-	commentService *services.CommentService
+	commentService domain.CommentServiceInterface
 }
 
-func NewCommentHandler(commentService *services.CommentService) *CommentHandler {
+func NewCommentHandler(commentService domain.CommentServiceInterface) *CommentHandler {
 	return &CommentHandler{commentService: commentService}
 }
 
 func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
-	postID := GetPostIDFromContext(r.Context())
+	postID := getPostIDFromContext(r.Context())
 
 	var createCommentDTO *dtos.CreateCommentDTO
 
@@ -55,7 +54,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CommentHandler) GetCommentsByPostID(w http.ResponseWriter, r *http.Request) {
-	postID := GetPostIDFromContext(r.Context())
+	postID := getPostIDFromContext(r.Context())
 
 	comments, err := h.commentService.GetCommentsByPostID(r.Context(), postID)
 	if err != nil {
@@ -63,7 +62,12 @@ func (h *CommentHandler) GetCommentsByPostID(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err := respondWithData(w, http.StatusOK, comments); err != nil {
+	responseDTOs := make([]*dtos.CommentResponseDTO, len(comments))
+	for i, comment := range comments {
+		responseDTOs[i] = new(dtos.CommentResponseDTO).FromDomain(comment)
+	}
+
+	if err := respondWithData(w, http.StatusOK, responseDTOs); err != nil {
 		handleInternalServerError(w, r, err)
 		return
 	}
