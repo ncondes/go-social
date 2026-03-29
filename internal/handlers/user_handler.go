@@ -19,17 +19,11 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		FirstName: "Robertico",
 	})
 	if err != nil {
-		switch err {
-		default:
-			handleInternalServerError(w, r, err)
-			return
-		}
-	}
-
-	if err := respondWithData(w, http.StatusCreated, nil); err != nil {
-		handleInternalServerError(w, r, err)
+		handleError(w, r, err)
 		return
 	}
+
+	respondWithData(w, http.StatusCreated, nil)
 }
 
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
@@ -37,20 +31,11 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.GetUser(r.Context(), userID)
 	if err != nil {
-		switch err {
-		case domain.ErrUserNotFound:
-			respondWithError(w, http.StatusNotFound, err.Error())
-			return
-		default:
-			handleInternalServerError(w, r, err)
-			return
-		}
-	}
-
-	if err := respondWithData(w, http.StatusOK, user); err != nil {
-		handleInternalServerError(w, r, err)
+		handleError(w, r, err)
 		return
 	}
+
+	respondWithData(w, http.StatusOK, user)
 }
 
 func (h *UserHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
@@ -59,18 +44,8 @@ func (h *UserHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
 	followerID := int64(1)
 
 	if err := h.userService.FollowUser(r.Context(), userID, followerID); err != nil {
-		switch err {
-		case domain.ErrUserNotFound:
-			respondWithError(w, http.StatusNotFound, err.Error())
-			return
-		case domain.ErrUserAlreadyFollowing:
-			// Idempotency handling
-			respondWithError(w, http.StatusNoContent, err.Error())
-			return
-		default:
-			handleInternalServerError(w, r, err)
-			return
-		}
+		handleError(w, r, err)
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -82,14 +57,8 @@ func (h *UserHandler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 	followerID := int64(1)
 
 	if err := h.userService.UnfollowUser(r.Context(), userID, followerID); err != nil {
-		switch err {
-		case domain.ErrUserNotFound:
-			respondWithError(w, http.StatusNotFound, err.Error())
-			return
-		default:
-			handleInternalServerError(w, r, err)
-			return
-		}
+		handleError(w, r, err)
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)

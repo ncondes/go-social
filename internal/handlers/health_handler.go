@@ -22,8 +22,5 @@ func (h *HealthHandler) Check(w http.ResponseWriter, r *http.Request) {
 		"env":    h.config.Env,
 	}
 
-	if err := respondWithData(w, http.StatusOK, data); err != nil {
-		handleInternalServerError(w, r, err)
-		return
-	}
+	respondWithData(w, http.StatusOK, data)
 }

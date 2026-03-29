@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/dtos"
@@ -22,7 +21,7 @@ func NewFeedHandler(feedService domain.FeedServiceInterface) *FeedHandler {
 }
 
 func (h *FeedHandler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
-	userID := int64(51) // TODO: get userID from auth middleware in the future
+	userID := int64(1) // TODO: get userID from auth middleware in the future
 
 	options, err := h.parseFeedQueryOptions(r)
 	if err != nil {
@@ -32,7 +31,7 @@ func (h *FeedHandler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
 
 	feedPosts, err := h.feedService.GetUserFeed(r.Context(), userID, options)
 	if err != nil {
-		handleInternalServerError(w, r, err)
+		handleError(w, r, err)
 		return
 	}
 
@@ -47,22 +46,16 @@ func (h *FeedHandler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dtos.FeedResponseDTO{
-		Posts: responsePosts,
-		Pagination: dtos.CursorBasedPaginationMeta{
-			Limit:      options.Pagination.Limit,
-			NextCursor: nextCursor,
-		},
+	pagination := dtos.CursorBasedPaginationMeta{
+		Limit:      options.Pagination.Limit,
+		NextCursor: nextCursor,
 	}
 
-	if err := respondWithData(w, http.StatusOK, response); err != nil {
-		handleInternalServerError(w, r, err)
-		return
-	}
+	respondWithPaginatedData(w, http.StatusOK, responsePosts, pagination)
 }
 
 func (h *FeedHandler) parseFeedQueryOptions(r *http.Request) (*domain.FeedQueryOptions, error) {
-	pagination, err := h.parseFeedPaginationOptions(r)
+	limit, cursor, err := parseCursorPaginationParams[domain.FeedCursor](r)
 	if err != nil {
 		return nil, err
 	}
@@ -73,50 +66,39 @@ func (h *FeedHandler) parseFeedQueryOptions(r *http.Request) (*domain.FeedQueryO
 	}
 
 	return &domain.FeedQueryOptions{
-		Pagination: pagination,
-		Filters:    filters,
-	}, nil
-}
-
-func (h *FeedHandler) parseFeedPaginationOptions(r *http.Request) (domain.FeedPaginationOptions, error) {
-	limit, cursor, err := parseCursorPaginationParams[domain.FeedCursor](r)
-	if err != nil {
-		return domain.FeedPaginationOptions{}, err
-	}
-
-	return domain.FeedPaginationOptions{
-		Limit:  limit,
-		Cursor: cursor,
+		Pagination: domain.FeedPaginationOptions{
+			Limit:  limit,
+			Cursor: cursor,
+		},
+		Filters: filters,
 	}, nil
 }
 
 func (h *FeedHandler) parseFeedFilterOptions(r *http.Request) (domain.FeedFilterOptions, error) {
-	filters := domain.FeedFilterOptions{}
-
-	if sinceStr := r.URL.Query().Get("since"); sinceStr != "" {
-		since, err := time.Parse(time.RFC3339, sinceStr)
-		if err != nil {
-			return filters, errors.New("invalid since date format, use RFC3339 (e.g., 2024-11-26T00:00:00Z)")
-		}
-		filters.Since = &since
+	since, err := parseDateParam(r, "since")
+	if err != nil {
+		return domain.FeedFilterOptions{}, err
 	}
 
-	if untilStr := r.URL.Query().Get("until"); untilStr != "" {
-		until, err := time.Parse(time.RFC3339, untilStr)
-		if err != nil {
-			return filters, errors.New("invalid until date format, use RFC3339 (e.g., 2024-11-26T23:59:59Z)")
-		}
-		filters.Until = &until
+	until, err := parseDateParam(r, "until")
+	if err != nil {
+		return domain.FeedFilterOptions{}, err
 	}
 
-	if filters.Since != nil && filters.Until != nil && filters.Since.After(*filters.Until) {
-		return filters, errors.New("since date must be before until date")
+	search := strings.TrimSpace(r.URL.Query().Get("search"))
+	tags := parseTagsParam(r, "tags")
+
+	isDateRangeInvalid := since != nil && until != nil && since.After(*until)
+	if isDateRangeInvalid {
+		return domain.FeedFilterOptions{}, errors.New("since date must be before until date")
 	}
 
-	filters.Search = strings.TrimSpace(r.URL.Query().Get("search"))
-	filters.Tags = parseTagsParam(r, "tags")
-
-	return filters, nil
+	return domain.FeedFilterOptions{
+		Since:  since,
+		Until:  until,
+		Search: search,
+		Tags:   tags,
+	}, nil
 }
 
 func (h *FeedHandler) buildNextCursor(feedPosts []*domain.FeedPost, limit int) (string, error) {
@@ -126,7 +108,7 @@ func (h *FeedHandler) buildNextCursor(feedPosts []*domain.FeedPost, limit int) (
 
 	lastPost := feedPosts[len(feedPosts)-1]
 	return pagination.EncodeCursor(domain.FeedCursor{
-		CreatedAt: lastPost.Post.CreatedAt,
-		ID:        lastPost.Post.ID,
+		CreatedAt: lastPost.CreatedAt,
+		ID:        lastPost.ID,
 	})
 }

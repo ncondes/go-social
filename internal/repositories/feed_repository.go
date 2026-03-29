@@ -166,6 +166,7 @@ func (r *FeedRepository) GetUserTagInterests(ctx context.Context, userID int64) 
 		var count int
 
 		if err := rows.Scan(&tag, &count); err != nil {
+			// TODO: think about resource here
 			return nil, handleDBError(err, resourcePost)
 		}
 

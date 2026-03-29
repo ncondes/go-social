@@ -1,18 +1,23 @@
 package handlers
 
 import (
+	"strings"
+
 	"github.com/go-playground/validator/v10"
 )
 
-var validate *validator.Validate
-
-// This is called automatically when the package is imported
-func init() {
-	validate = validator.New(validator.WithRequiredStructEnabled())
+type Validator struct {
+	validate *validator.Validate
 }
 
-func validateStruct(data any) []string {
-	if err := validate.Struct(data); err != nil {
+func NewValidator() *Validator {
+	return &Validator{
+		validate: validator.New(validator.WithRequiredStructEnabled()),
+	}
+}
+
+func (v *Validator) validateStruct(data any) []string {
+	if err := v.validate.Struct(data); err != nil {
 		errs, ok := err.(validator.ValidationErrors)
 
 		if ok {
@@ -33,6 +38,7 @@ func formatFieldError(err validator.FieldError) string {
 	field := err.Field()
 	tag := err.Tag()
 	param := err.Param()
+	field = strings.ToLower(field)
 
 	messages := map[string]string{
 		"required": field + " is required",

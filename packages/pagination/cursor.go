@@ -6,6 +6,7 @@ import (
 )
 
 func EncodeCursor[T any](cursor T) (string, error) {
+	// Serialize the cursor into a JSON byte slice
 	data, err := json.Marshal(cursor)
 	if err != nil {
 		return "", err

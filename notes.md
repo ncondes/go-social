@@ -53,3 +53,17 @@ make migrate-up
 ```bash
 make migrate-down
 ```
+
+## Run tests
+
+Start test database
+
+```bash
+docker compose -f docker-compose.test.yml up -d
+```
+
+Run tests
+
+```bash
+make test
+```

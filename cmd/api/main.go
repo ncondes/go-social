@@ -35,7 +35,8 @@ func main() {
 
 	repositories := repositories.New(db)
 	services := services.New(repositories)
-	handlers := handlers.New(config, services)
+	validator := handlers.NewValidator()
+	handlers := handlers.New(config, services, validator)
 
 	app := &application{
 		config:   config,

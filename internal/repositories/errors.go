@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/lib/pq"
 	"github.com/ncondes/go/social/internal/domain"
@@ -41,9 +40,6 @@ func handleDBError(err error, resource resourceType) error {
 	if !ok {
 		return err
 	}
-
-	// TODO: remove this
-	fmt.Println(pqErr.Code, pqErr.Constraint)
 
 	switch pqErr.Code {
 	case foreignKeyViolation:

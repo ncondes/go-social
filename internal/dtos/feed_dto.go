@@ -35,8 +35,3 @@ func (dto *FeedPostResponseDTO) FromDomain(feedPost *domain.FeedPost) *FeedPostR
 
 	return response
 }
-
-type FeedResponseDTO struct {
-	Posts      []*FeedPostResponseDTO    `json:"posts"`
-	Pagination CursorBasedPaginationMeta `json:"pagination"`
-}

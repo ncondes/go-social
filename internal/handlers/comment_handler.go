@@ -9,10 +9,11 @@ import (
 
 type CommentHandler struct {
 	commentService domain.CommentServiceInterface
+	validator      *Validator
 }
 
-func NewCommentHandler(commentService domain.CommentServiceInterface) *CommentHandler {
-	return &CommentHandler{commentService: commentService}
+func NewCommentHandler(commentService domain.CommentServiceInterface, validator *Validator) *CommentHandler {
+	return &CommentHandler{commentService: commentService, validator: validator}
 }
 
 func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +26,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validateStruct(createCommentDTO); err != nil {
+	if err := h.validator.validateStruct(createCommentDTO); err != nil {
 		respondWithErrors(w, http.StatusBadRequest, err)
 		return
 	}
@@ -37,20 +38,11 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.commentService.CreateComment(r.Context(), &comment); err != nil {
-		switch err {
-		case domain.ErrPostNotFound:
-			respondWithError(w, http.StatusNotFound, err.Error())
-			return
-		default:
-			handleInternalServerError(w, r, err)
-			return
-		}
-	}
-
-	if err := respondWithData(w, http.StatusCreated, comment); err != nil {
-		handleInternalServerError(w, r, err)
+		handleError(w, r, err)
 		return
 	}
+
+	respondWithData(w, http.StatusCreated, comment)
 }
 
 func (h *CommentHandler) GetCommentsByPostID(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +50,7 @@ func (h *CommentHandler) GetCommentsByPostID(w http.ResponseWriter, r *http.Requ
 
 	comments, err := h.commentService.GetCommentsByPostID(r.Context(), postID)
 	if err != nil {
-		handleInternalServerError(w, r, err)
+		handleError(w, r, err)
 		return
 	}
 
@@ -67,8 +59,5 @@ func (h *CommentHandler) GetCommentsByPostID(w http.ResponseWriter, r *http.Requ
 		responseDTOs[i] = new(dtos.CommentResponseDTO).FromDomain(comment)
 	}
 
-	if err := respondWithData(w, http.StatusOK, responseDTOs); err != nil {
-		handleInternalServerError(w, r, err)
-		return
-	}
+	respondWithData(w, http.StatusOK, responseDTOs)
 }

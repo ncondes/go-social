@@ -16,12 +16,13 @@ type Handlers struct {
 func New(
 	config *config.Config,
 	services *services.Services,
+	validator *Validator,
 ) *Handlers {
 	return &Handlers{
 		HealthHandler:  NewHealthHandler(config),
 		UserHandler:    NewUserHandler(services.UserService),
-		PostHandler:    NewPostHandler(services.PostService),
-		CommentHandler: NewCommentHandler(services.CommentService),
+		PostHandler:    NewPostHandler(services.PostService, validator),
+		CommentHandler: NewCommentHandler(services.CommentService, validator),
 		FeedHandler:    NewFeedHandler(services.FeedService),
 	}
 }
