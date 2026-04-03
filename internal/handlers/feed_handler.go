@@ -46,7 +46,7 @@ func (h *FeedHandler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pagination := dtos.CursorBasedPaginationMeta{
+	pagination := dtos.CursorBasedPaginationMetaDTO{
 		Limit:      options.Pagination.Limit,
 		NextCursor: nextCursor,
 	}

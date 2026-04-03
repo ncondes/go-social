@@ -11,6 +11,21 @@ import (
 	"github.com/ncondes/go/social/internal/services"
 )
 
+const version = "1.0.0"
+
+//	@title	Gopher Social API
+//	@version
+//	@description	A RESTful API for a social network. Supports user profiles,
+//	@description	posts with tags, comments, follower relationships, and a personalized feed
+//	@description	scored by recency, engagement, and tag affinity.
+
+//	@contact.name	Nicolas Conde
+//	@contact.url	https://github.com/ncondes/go/social
+
+// @securityDefinitions.apikey	ApiKeyAuth
+// @in							header
+// @name						Authorization
+// @description				Type "Bearer" followed by a space and JWT token.
 func main() {
 	err := godotenv.Load()
 	if err != nil {

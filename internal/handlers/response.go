@@ -38,34 +38,17 @@ func jsonDecode(w http.ResponseWriter, r *http.Request, data any) error {
 }
 
 func respondWithError(w http.ResponseWriter, status int, message string) {
-	type envelope struct {
-		Error string `json:"error"`
-	}
-
-	jsonEncode(w, status, &envelope{Error: message})
+	jsonEncode(w, status, &dtos.ErrorResponseDTO{Error: message})
 }
 
 func respondWithErrors(w http.ResponseWriter, status int, errors []string) {
-	type envelope struct {
-		Errors []string `json:"errors"`
-	}
-
-	jsonEncode(w, status, &envelope{Errors: errors})
+	jsonEncode(w, status, &dtos.ErrorsResponseDTO{Errors: errors})
 }
 
 func respondWithData(w http.ResponseWriter, status int, data any) {
-	type envelope struct {
-		Data any `json:"data"`
-	}
-
-	jsonEncode(w, status, &envelope{Data: data})
+	jsonEncode(w, status, &dtos.DataResponseDTO{Data: data})
 }
 
-func respondWithPaginatedData[T any](w http.ResponseWriter, status int, data []T, pagination dtos.CursorBasedPaginationMeta) {
-	type envelope struct {
-		Data       []T                            `json:"data"`
-		Pagination dtos.CursorBasedPaginationMeta `json:"pagination"`
-	}
-
-	jsonEncode(w, status, &envelope{Data: data, Pagination: pagination})
+func respondWithPaginatedData[T any](w http.ResponseWriter, status int, data []T, pagination dtos.CursorBasedPaginationMetaDTO) {
+	jsonEncode(w, status, &dtos.CursorBasedPaginationResponseDTO[T]{Data: data, Pagination: pagination})
 }

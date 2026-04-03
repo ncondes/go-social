@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Addr string
-	DB   DBConfig
-	Env  string
+	Addr       string
+	DB         DBConfig
+	Env        string
+	APIBaseURL string
 }
 
 type DBConfig struct {
@@ -29,6 +30,7 @@ func Load() *Config {
 			MaxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 5),
 			MaxIdleTime:  env.GetDuration("DB_MAX_IDLE_TIME", 5*time.Minute),
 		},
-		Env: env.GetString("ENV", "development"),
+		Env:        env.GetString("ENV", "development"),
+		APIBaseURL: env.GetString("API_BASE_URL", "localhost:8080"),
 	}
 }

@@ -7,13 +7,14 @@ import (
 )
 
 type Post struct {
-	ID        int64     `json:"id"`
-	Title     string    `json:"title"`
-	Content   string    `json:"content"`
-	UserID    int64     `json:"user_id"`
-	Tags      []string  `json:"tags"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        int64     `json:"id"         example:"1"`
+	Title     string    `json:"title"      example:"My first post"`
+	Content   string    `json:"content"    example:"This is the content of my post."`
+	UserID    int64     `json:"user_id"    example:"1"`
+	Tags      []string  `json:"tags"       example:"go,api"`
+	Version   int64     `json:"version"    example:"1"`
+	CreatedAt time.Time `json:"created_at" example:"2026-04-03T10:00:00Z"`
+	UpdatedAt time.Time `json:"updated_at" example:"2026-04-03T10:00:00Z"`
 }
 
 type PostWithDetails struct {
@@ -37,5 +38,6 @@ type PostServiceInterface interface {
 }
 
 var (
-	ErrPostNotFound = errors.New("post not found")
+	ErrPostNotFound        = errors.New("post not found")
+	ErrPostVersionConflict = errors.New("post version conflict")
 )

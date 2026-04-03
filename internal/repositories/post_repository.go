@@ -24,7 +24,7 @@ func (r *PostRepository) Create(ctx context.Context, post *domain.Post) error {
 	query := `
 	INSERT INTO posts (title, content, user_id, tags)
 	VALUES ($1, $2, $3, $4)
-	RETURNING id, created_at, updated_at`
+	RETURNING id, version, created_at, updated_at`
 
 	err := r.db.QueryRowContext(
 		ctx,
@@ -35,6 +35,7 @@ func (r *PostRepository) Create(ctx context.Context, post *domain.Post) error {
 		pq.Array(post.Tags),
 	).Scan(
 		&post.ID,
+		&post.Version,
 		&post.CreatedAt,
 		&post.UpdatedAt,
 	)
@@ -56,6 +57,7 @@ func (r *PostRepository) GetByID(ctx context.Context, postID int64) (*domain.Pos
 		p.content,
 		p.tags,
 		p.user_id,
+		p.version,
 		p.created_at,
 		p.updated_at,
 		u.id,
@@ -82,6 +84,7 @@ func (r *PostRepository) GetByID(ctx context.Context, postID int64) (*domain.Pos
 		&result.Post.Content,
 		pq.Array(&result.Post.Tags),
 		&result.Post.UserID,
+		&result.Post.Version,
 		&result.Post.CreatedAt,
 		&result.Post.UpdatedAt,
 		&result.Author.ID,
@@ -130,12 +133,12 @@ func (r *PostRepository) Update(ctx context.Context, post *domain.Post) error {
 		return nil // No fields to update
 	}
 
-	setFields = append(setFields, "updated_at = NOW()")
-	args = append(args, post.ID, post.UpdatedAt)
+	setFields = append(setFields, "updated_at = NOW()", "version = version + 1")
+	args = append(args, post.ID, post.Version)
 
-	// Added optimistic locking for concurrency control
+	// Optimistic locking via version column
 	query := fmt.Sprintf(
-		"UPDATE posts SET %s WHERE id = $%d AND updated_at = $%d RETURNING id, title, content, user_id, tags, created_at, updated_at",
+		"UPDATE posts SET %s WHERE id = $%d AND version = $%d RETURNING id, title, content, user_id, tags, version, created_at, updated_at",
 		strings.Join(setFields, ", "),
 		argIndex,
 		argIndex+1,
@@ -151,12 +154,22 @@ func (r *PostRepository) Update(ctx context.Context, post *domain.Post) error {
 		&post.Content,
 		&post.UserID,
 		pq.Array(&post.Tags),
+		&post.Version,
 		&post.CreatedAt,
 		&post.UpdatedAt,
 	)
 
 	if err != nil {
-		return handleDBError(err, resourcePost)
+		if err != sql.ErrNoRows {
+			return handleDBError(err, resourcePost)
+		}
+		// Zero rows: distinguish between wrong ID and stale version
+		var exists bool
+		_ = r.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1)", post.ID).Scan(&exists)
+		if !exists {
+			return domain.ErrPostNotFound
+		}
+		return domain.ErrPostVersionConflict
 	}
 
 	return nil

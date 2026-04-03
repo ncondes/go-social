@@ -412,14 +412,14 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 		title := "Updated Title"
 		content := "Updated Content"
 		tags := []string{"updated", "tags"}
-		updatedAt := time.Now()
+		version := int64(1)
 
 		mockPostService := &mockPostService{
 			updatePostFunc: func(ctx context.Context, post *domain.Post) error {
 				post.Title = title
 				post.Content = content
 				post.Tags = tags
-				post.UpdatedAt = updatedAt
+				post.Version = version + 1
 				return nil
 			},
 		}
@@ -428,10 +428,10 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 		postHandler := NewPostHandler(mockPostService, validator)
 
 		updatePostDTO := dtos.UpdatePostDTO{
-			Title:     &title,
-			Content:   &content,
-			Tags:      &tags,
-			UpdatedAt: &updatedAt,
+			Title:   &title,
+			Content: &content,
+			Tags:    &tags,
+			Version: &version,
 		}
 
 		req := testutils.MakeJSONRequest(t, http.MethodPatch, "/posts/1", updatePostDTO)
@@ -451,7 +451,7 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 		assert.Equal(t, title, response.Data.Title)
 		assert.Equal(t, content, response.Data.Content)
 		assert.Equal(t, tags, response.Data.Tags)
-		assert.True(t, response.Data.UpdatedAt.Equal(updatedAt))
+		assert.Equal(t, version+1, response.Data.Version)
 	})
 
 	t.Run("returns 400 when JSON is invalid", func(t *testing.T) {
@@ -517,9 +517,9 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 						str := ""
 						return &str
 					}(),
-					UpdatedAt: func() *time.Time {
-						t := time.Now()
-						return &t
+					Version: func() *int64 {
+						v := int64(1)
+						return &v
 					}(),
 				},
 				expectedError: "title must be at least 1 characters",
@@ -531,9 +531,9 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 						str := ""
 						return &str
 					}(),
-					UpdatedAt: func() *time.Time {
-						t := time.Now()
-						return &t
+					Version: func() *int64 {
+						v := int64(1)
+						return &v
 					}(),
 				},
 				expectedError: "content must be at least 1 characters",
@@ -545,9 +545,9 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 						str := strings.Repeat("a", 101)
 						return &str
 					}(),
-					UpdatedAt: func() *time.Time {
-						t := time.Now()
-						return &t
+					Version: func() *int64 {
+						v := int64(1)
+						return &v
 					}(),
 				},
 				expectedError: "title must be at most 100 characters",
@@ -559,9 +559,9 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 						str := strings.Repeat("a", 1001)
 						return &str
 					}(),
-					UpdatedAt: func() *time.Time {
-						t := time.Now()
-						return &t
+					Version: func() *int64 {
+						v := int64(1)
+						return &v
 					}(),
 				},
 				expectedError: "content must be at most 1000 characters",
@@ -607,9 +607,9 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 				str := "test"
 				return &str
 			}(),
-			UpdatedAt: func() *time.Time {
-				t := time.Now()
-				return &t
+			Version: func() *int64 {
+				v := int64(1)
+				return &v
 			}(),
 		})
 		w := httptest.NewRecorder()
@@ -640,10 +640,10 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 		postHandler := NewPostHandler(mockPostService, validator)
 
 		title := "test"
-		updatedAt := time.Now()
+		version := int64(1)
 		req := testutils.MakeJSONRequest(t, http.MethodPatch, "/posts/1", dtos.UpdatePostDTO{
-			Title:     &title,
-			UpdatedAt: &updatedAt,
+			Title:   &title,
+			Version: &version,
 		})
 		w := httptest.NewRecorder()
 

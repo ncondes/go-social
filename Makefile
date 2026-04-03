@@ -127,6 +127,13 @@ dev:
 	@echo "Starting development server with hot reload..."
 	@air
 
+# ==================== Swagger ====================
+.PHONY: swagger
+swagger:
+	@echo "Generating Swagger documentation..."
+	@swag init -g main.go -d ./cmd/api/,./internal/handlers,./internal/dtos,./internal/domain -o ./docs && swag fmt
+	@echo "Swagger documentation generated successfully"
+
 # ==================== Utilities ====================
 
 .PHONY: help
@@ -157,7 +164,10 @@ help:
 	@echo ""
 	@echo "  Development:"
 	@echo "    dev               - Run with hot reload (requires air)"
-
+	@echo ""
+	@echo "  Swagger:"
+	@echo "    swagger           - Generate Swagger documentation"
+	@echo ""
 %:
 	@: 
 # This is for avoiding errors

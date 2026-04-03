@@ -16,6 +16,18 @@ func NewPostHandler(postService domain.PostServiceInterface, validator *Validato
 	return &PostHandler{postService: postService, validator: validator}
 }
 
+// CreatePost godoc
+//
+//	@Summary		Create a new post
+//	@Description	Create a new post with title, content, and optional tags
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			post	body		dtos.CreatePostDTO	true	"Post data"
+//	@Success		201		{object}	domain.Post
+//	@Failure		400		{object}	dtos.ErrorsResponseDTO	"Validation errors"
+//	@Failure		500		{object}	dtos.ErrorResponseDTO	"Internal server error"
+//	@Router			/posts [post]
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	var createPostDTO *dtos.CreatePostDTO
 
@@ -44,6 +56,18 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	respondWithData(w, http.StatusCreated, post)
 }
 
+// GetPost godoc
+//
+//	@Summary		Get a post
+//	@Description	Get a post by ID with author details and comment count
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int64	true	"Post ID"
+//	@Success		200		{object}	dtos.PostResponseDTO
+//	@Failure		404		{object}	dtos.ErrorResponseDTO	"Post not found"
+//	@Failure		500		{object}	dtos.ErrorResponseDTO	"Internal server error"
+//	@Router			/posts/{postID} [get]
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	postID := getPostIDFromContext(r.Context())
 
@@ -58,6 +82,21 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	respondWithData(w, http.StatusOK, response)
 }
 
+// UpdatePost godoc
+//
+//	@Summary		Update a post
+//	@Description	Update a post's title, content, or tags by ID
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int64				true	"Post ID"
+//	@Param			post	body		dtos.UpdatePostDTO	true	"Fields to update"
+//	@Success		200		{object}	domain.Post
+//	@Failure		400		{object}	dtos.ErrorsResponseDTO	"Validation errors"
+//	@Failure		404		{object}	dtos.ErrorResponseDTO	"Post not found"
+//	@Failure		409		{object}	dtos.ErrorResponseDTO	"Post version conflict"
+//	@Failure		500		{object}	dtos.ErrorResponseDTO	"Internal server error"
+//	@Router			/posts/{postID} [patch]
 func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	postID := getPostIDFromContext(r.Context())
 
@@ -80,8 +119,8 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	post := domain.Post{
-		ID:        postID,
-		UpdatedAt: *updatePostDTO.UpdatedAt,
+		ID:      postID,
+		Version: *updatePostDTO.Version,
 	}
 
 	if updatePostDTO.Title != nil {
@@ -104,6 +143,18 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	respondWithData(w, http.StatusOK, &post)
 }
 
+// DeletePost godoc
+//
+//	@Summary		Delete a post
+//	@Description	Delete a post by ID
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path	int64	true	"Post ID"
+//	@Success		204		"No content"
+//	@Failure		404		{object}	dtos.ErrorResponseDTO	"Post not found"
+//	@Failure		500		{object}	dtos.ErrorResponseDTO	"Internal server error"
+//	@Router			/posts/{postID} [delete]
 func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	postID := getPostIDFromContext(r.Context())
 
