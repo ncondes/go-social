@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/lib/pq"
 	"github.com/ncondes/go/social/internal/domain"
@@ -16,9 +17,10 @@ const (
 type resourceType string
 
 const (
-	resourcePost    resourceType = "post"
-	resourceUser    resourceType = "user"
-	resourceComment resourceType = "comment"
+	resourcePost           resourceType = "post"
+	resourceUser           resourceType = "user"
+	resourceComment        resourceType = "comment"
+	resourceUserInvitation resourceType = "user_invitation"
 )
 
 func handleDBError(err error, resource resourceType) error {
@@ -40,6 +42,13 @@ func handleDBError(err error, resource resourceType) error {
 	if !ok {
 		return err
 	}
+
+	// TODO: remove at some point (this is for debugging purposes)
+	fmt.Println("[DEBUG] pqErr", pqErr)
+	fmt.Println("[DEBUG] pqErr.Code", pqErr.Code)
+	fmt.Println("[DEBUG] pqErr.Constraint", pqErr.Constraint)
+	fmt.Println("[DEBUG] pqErr.Detail", pqErr.Detail)
+	fmt.Println("[DEBUG] pqErr.Table", pqErr.Table)
 
 	switch pqErr.Code {
 	case foreignKeyViolation:
@@ -72,6 +81,10 @@ func translateUniqueViolationError(pqErr *pq.Error) error {
 	switch pqErr.Constraint {
 	case "pk_followers":
 		return domain.ErrUserAlreadyFollowing
+	case "uq_users_email":
+		return domain.ErrUserEmailTaken
+	case "uq_users_username":
+		return domain.ErrUserUsernameTaken
 	default:
 		return pqErr
 	}

@@ -12,6 +12,7 @@ type Config struct {
 	DB         DBConfig
 	Env        string
 	APIBaseURL string
+	MailConfig MailConfig
 }
 
 type DBConfig struct {
@@ -19,6 +20,10 @@ type DBConfig struct {
 	MaxOpenConns int
 	MaxIdleConns int
 	MaxIdleTime  time.Duration
+}
+
+type MailConfig struct {
+	Exp time.Duration
 }
 
 func Load() *Config {
@@ -32,5 +37,8 @@ func Load() *Config {
 		},
 		Env:        env.GetString("ENV", "development"),
 		APIBaseURL: env.GetString("API_BASE_URL", "localhost:8080"),
+		MailConfig: MailConfig{
+			Exp: env.GetDuration("MAIL_EXPIRATION_TIME", 24*time.Hour),
+		},
 	}
 }

@@ -12,6 +12,7 @@ type Handlers struct {
 	PostHandler    *PostHandler
 	CommentHandler *CommentHandler
 	FeedHandler    *FeedHandler
+	AuthHandler    *AuthHandler
 }
 
 func New(
@@ -26,5 +27,6 @@ func New(
 		PostHandler:    NewPostHandler(services.PostService, validator, logger),
 		CommentHandler: NewCommentHandler(services.CommentService, validator, logger),
 		FeedHandler:    NewFeedHandler(services.FeedService, logger),
+		AuthHandler:    NewAuthHandler(services.UserService, validator, logger),
 	}
 }

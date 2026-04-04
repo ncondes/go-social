@@ -34,7 +34,7 @@ func main() {
 	log.Println("Connected to database successfully")
 	defer db.Close()
 
-	repositories := repositories.New(db)
+	repositories := repositories.New(db, config)
 
 	dbPkg.Flush(db)
 	dbPkg.Seed(repositories)

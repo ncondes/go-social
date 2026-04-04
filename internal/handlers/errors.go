@@ -17,7 +17,10 @@ func handleError(w http.ResponseWriter, r *http.Request, err error, logger loggi
 		errors.Is(err, domain.ErrCommentNotFound):
 		respondWithError(w, http.StatusNotFound, err.Error(), logger)
 
-	case errors.Is(err, domain.ErrPostVersionConflict):
+	case
+		errors.Is(err, domain.ErrPostVersionConflict),
+		errors.Is(err, domain.ErrUserEmailTaken),
+		errors.Is(err, domain.ErrUserUsernameTaken):
 		respondWithError(w, http.StatusConflict, err.Error(), logger)
 
 	case errors.Is(err, domain.ErrUserAlreadyFollowing):

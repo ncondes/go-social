@@ -53,7 +53,7 @@ func main() {
 	logger.Infow("Connected to database successfully")
 	defer db.Close()
 
-	repositories := repositories.New(db)
+	repositories := repositories.New(db, config)
 	services := services.New(repositories)
 	validator := handlers.NewValidator()
 	handlers := handlers.New(config, services, validator, logger)

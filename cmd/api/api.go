@@ -41,6 +41,11 @@ func (app *application) mount() *chi.Mux {
 			httpSwagger.URL(docsURL),
 		))
 
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/register", app.handlers.AuthHandler.RegisterUser)
+			r.Put("/activate", app.handlers.AuthHandler.ActivateUser)
+		})
+
 		r.Route("/feed", func(r chi.Router) {
 			// TODO: middleware for authentication
 			r.Get("/", app.handlers.FeedHandler.GetUserFeed)

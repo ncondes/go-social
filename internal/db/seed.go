@@ -34,7 +34,7 @@ func Seed(r *repositories.Repositories) {
 
 	users := generateUsers(usersAmount)
 	for _, user := range users {
-		err := r.UserRepository.Create(ctx, user)
+		err := r.UserRepository.CreateUser(ctx, user)
 		if err != nil {
 			log.Printf("Error seeding users: %v\n", err)
 		}
