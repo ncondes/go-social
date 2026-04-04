@@ -5,15 +5,21 @@ import (
 
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/dtos"
+	"github.com/ncondes/go/social/internal/logging"
 )
 
 type PostHandler struct {
 	postService domain.PostServiceInterface
 	validator   *Validator
+	logger      logging.Logger
 }
 
-func NewPostHandler(postService domain.PostServiceInterface, validator *Validator) *PostHandler {
-	return &PostHandler{postService: postService, validator: validator}
+func NewPostHandler(postService domain.PostServiceInterface, validator *Validator, logger logging.Logger) *PostHandler {
+	return &PostHandler{
+		postService: postService,
+		validator:   validator,
+		logger:      logger,
+	}
 }
 
 // CreatePost godoc
@@ -32,12 +38,12 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	var createPostDTO *dtos.CreatePostDTO
 
 	if err := jsonDecode(w, r, &createPostDTO); err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
+		respondWithError(w, http.StatusBadRequest, err.Error(), h.logger)
 		return
 	}
 
 	if err := h.validator.validateStruct(createPostDTO); err != nil {
-		respondWithErrors(w, http.StatusBadRequest, err)
+		respondWithErrors(w, http.StatusBadRequest, err, h.logger)
 		return
 	}
 
@@ -49,11 +55,11 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.postService.CreatePost(r.Context(), &post); err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, h.logger)
 		return
 	}
 
-	respondWithData(w, http.StatusCreated, post)
+	respondWithData(w, http.StatusCreated, post, h.logger)
 }
 
 // GetPost godoc
@@ -73,13 +79,13 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 
 	postWithDetails, err := h.postService.GetPost(r.Context(), postID)
 	if err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, h.logger)
 		return
 	}
 
 	response := new(dtos.PostResponseDTO).FromDomain(postWithDetails)
 
-	respondWithData(w, http.StatusOK, response)
+	respondWithData(w, http.StatusOK, response, h.logger)
 }
 
 // UpdatePost godoc
@@ -103,18 +109,18 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	var updatePostDTO *dtos.UpdatePostDTO
 
 	if err := jsonDecode(w, r, &updatePostDTO); err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
+		respondWithError(w, http.StatusBadRequest, err.Error(), h.logger)
 		return
 	}
 
 	// TODO: should we make this shared? as a util
 	if updatePostDTO.Title == nil && updatePostDTO.Content == nil && updatePostDTO.Tags == nil {
-		respondWithError(w, http.StatusBadRequest, "no fields to update")
+		respondWithError(w, http.StatusBadRequest, "no fields to update", h.logger)
 		return
 	}
 
 	if err := h.validator.validateStruct(updatePostDTO); err != nil {
-		respondWithErrors(w, http.StatusBadRequest, err)
+		respondWithErrors(w, http.StatusBadRequest, err, h.logger)
 		return
 	}
 
@@ -136,11 +142,11 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.postService.UpdatePost(r.Context(), &post); err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, h.logger)
 		return
 	}
 
-	respondWithData(w, http.StatusOK, &post)
+	respondWithData(w, http.StatusOK, &post, h.logger)
 }
 
 // DeletePost godoc
@@ -159,7 +165,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	postID := getPostIDFromContext(r.Context())
 
 	if err := h.postService.DeletePost(r.Context(), postID); err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, h.logger)
 		return
 	}
 

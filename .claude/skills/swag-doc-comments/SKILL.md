@@ -45,21 +45,25 @@ Note: `[tab]` represents a real tab character (`\t`). When writing to Go files, 
 ## Rules for each annotation
 
 ### @Summary / @Description
+
 - `@Summary`: short imperative phrase (e.g. `Get a post`, `Create a comment`)
 - `@Description`: one sentence explaining behavior; repeat `@Summary` if nothing more to add
 
 ### @Tags
+
 - Use the resource name, plural, lowercase: `posts`, `users`, `comments`, `feed`, `health`
 - Derive from the handler file name (e.g. `post_handler.go` → `posts`)
 
 ### @Accept / @Produce
+
 - Always `json` for this project unless the handler explicitly does something else
 
 ### @Param
+
 Syntax: `@Param <name> <in> <type> <required> "<description>"`
 
 | Source | `in` value | How to detect |
-|---|---|---|
+| --- | --- | --- |
 | URL path `{postID}` | `path` | Handler calls `getPostIDFromContext` or similar |
 | Query string | `query` | Handler reads `r.URL.Query()` |
 | Request body | `body` | Handler calls `jsonDecode` — use the DTO type |
@@ -70,6 +74,7 @@ Syntax: `@Param <name> <in> <type> <required> "<description>"`
 - `required` is `true` for path/body params, `false` for query params
 
 ### @Success
+
 - Read the `respondWithData(w, http.StatusXXX, <value>)` call to get the status code and type
 - Use `{object}` for single structs, `{array}` for slices
 - Use domain types for responses (e.g. `domain.Post`) or DTO response types if a `FromDomain` mapper exists
@@ -92,6 +97,7 @@ Use the concrete DTOs from `internal/dtos/response_dto.go`:
 - Omit 404 if the handler doesn't look up an existing resource (e.g. CreatePost)
 
 ### @Router
+
 - Read `cmd/api/api.go` to find the exact registered path
 - Path params use `{paramName}` syntax: `/posts/{postID}/comments`
 - HTTP method in lowercase brackets: `[get]`, `[post]`, `[patch]`, `[delete]`

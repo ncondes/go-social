@@ -34,7 +34,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -76,7 +77,7 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -108,7 +109,7 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		mockPostService := &mockPostService{}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		req := httptest.NewRequest(http.MethodPost, "/posts", strings.NewReader("invalid json"))
 		req.Header.Set("Content-Type", "application/json")
@@ -125,7 +126,7 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		mockPostService := &mockPostService{}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		testCases := []struct {
 			name          string
@@ -205,7 +206,7 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -232,7 +233,7 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -266,7 +267,7 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -321,7 +322,7 @@ func TestPostHandler_GetPost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		req := testutils.MakeJSONRequest(t, http.MethodGet, "/posts/1", nil)
 		w := httptest.NewRecorder()
@@ -356,7 +357,7 @@ func TestPostHandler_GetPost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		req := testutils.MakeJSONRequest(t, http.MethodGet, "/posts/1", nil)
 		w := httptest.NewRecorder()
@@ -384,7 +385,7 @@ func TestPostHandler_GetPost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		req := testutils.MakeJSONRequest(t, http.MethodGet, "/posts/1", nil)
 		w := httptest.NewRecorder()
@@ -425,7 +426,7 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		updatePostDTO := dtos.UpdatePostDTO{
 			Title:   &title,
@@ -460,7 +461,7 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 		mockPostService := &mockPostService{}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		req := httptest.NewRequest(http.MethodPatch, "/posts/1", strings.NewReader("invalid json"))
 		req.Header.Set("Content-Type", "application/json")
@@ -477,7 +478,7 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 		mockPostService := &mockPostService{}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		updatePostDTO := dtos.UpdatePostDTO{}
 
@@ -503,7 +504,7 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 		mockPostService := &mockPostService{}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		testCases := []struct {
 			name          string
@@ -600,7 +601,7 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		req := testutils.MakeJSONRequest(t, http.MethodPatch, "/posts/1", dtos.UpdatePostDTO{
 			Title: func() *string {
@@ -637,7 +638,7 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		title := "test"
 		version := int64(1)
@@ -674,7 +675,7 @@ func TestPostHandler_DeletePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		req := testutils.MakeJSONRequest(t, http.MethodDelete, "/posts/1", nil)
 		w := httptest.NewRecorder()
@@ -694,7 +695,7 @@ func TestPostHandler_DeletePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		req := testutils.MakeJSONRequest(t, http.MethodDelete, "/posts/1", nil)
 		w := httptest.NewRecorder()
@@ -722,7 +723,7 @@ func TestPostHandler_DeletePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger)
 
 		req := testutils.MakeJSONRequest(t, http.MethodDelete, "/posts/1", nil)
 		w := httptest.NewRecorder()

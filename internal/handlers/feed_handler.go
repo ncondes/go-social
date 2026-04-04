@@ -7,16 +7,19 @@ import (
 
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/dtos"
+	"github.com/ncondes/go/social/internal/logging"
 	"github.com/ncondes/go/social/packages/pagination"
 )
 
 type FeedHandler struct {
 	feedService domain.FeedServiceInterface
+	logger      logging.Logger
 }
 
-func NewFeedHandler(feedService domain.FeedServiceInterface) *FeedHandler {
+func NewFeedHandler(feedService domain.FeedServiceInterface, logger logging.Logger) *FeedHandler {
 	return &FeedHandler{
 		feedService: feedService,
+		logger:      logger,
 	}
 }
 
@@ -25,13 +28,13 @@ func (h *FeedHandler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
 
 	options, err := h.parseFeedQueryOptions(r)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error())
+		respondWithError(w, http.StatusBadRequest, err.Error(), h.logger)
 		return
 	}
 
 	feedPosts, err := h.feedService.GetUserFeed(r.Context(), userID, options)
 	if err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, h.logger)
 		return
 	}
 
@@ -42,7 +45,7 @@ func (h *FeedHandler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
 
 	nextCursor, err := h.buildNextCursor(feedPosts, options.Pagination.Limit)
 	if err != nil {
-		handleInternalServerError(w, r, err)
+		handleInternalServerError(w, r, err, h.logger)
 		return
 	}
 
@@ -51,7 +54,7 @@ func (h *FeedHandler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
 		NextCursor: nextCursor,
 	}
 
-	respondWithPaginatedData(w, http.StatusOK, responsePosts, pagination)
+	respondWithPaginatedData(w, http.StatusOK, responsePosts, pagination, h.logger)
 }
 
 func (h *FeedHandler) parseFeedQueryOptions(r *http.Request) (*domain.FeedQueryOptions, error) {

@@ -1,14 +1,17 @@
 package main
 
 import (
-	"log"
+	"errors"
+	"net/http"
 
 	"github.com/joho/godotenv"
 	"github.com/ncondes/go/social/internal/config"
 	"github.com/ncondes/go/social/internal/db"
 	"github.com/ncondes/go/social/internal/handlers"
+	"github.com/ncondes/go/social/internal/logging"
 	"github.com/ncondes/go/social/internal/repositories"
 	"github.com/ncondes/go/social/internal/services"
+	"go.uber.org/zap"
 )
 
 const version = "1.0.0"
@@ -27,9 +30,12 @@ const version = "1.0.0"
 // @name						Authorization
 // @description				Type "Bearer" followed by a space and JWT token.
 func main() {
+	logger := logging.NewZapLogger(zap.Must(zap.NewProduction()).Sugar())
+	defer logger.Sync()
+
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		logger.Fatalw("Error loading .env file", "error", err)
 	}
 
 	config := config.Load()
@@ -41,24 +47,31 @@ func main() {
 		config.DB.MaxIdleTime,
 	)
 	if err != nil {
-		log.Println(err)
-		log.Fatal("Error connecting to database")
+		logger.Fatalw("Error connecting to database", "error", err)
 	}
 
-	log.Println("Connected to database successfully")
+	logger.Infow("Connected to database successfully")
 	defer db.Close()
 
 	repositories := repositories.New(db)
 	services := services.New(repositories)
 	validator := handlers.NewValidator()
-	handlers := handlers.New(config, services, validator)
+	handlers := handlers.New(config, services, validator, logger)
 
 	app := &application{
 		config:   config,
 		handlers: handlers,
+		logger:   logger,
 	}
 
 	mux := app.mount()
 
-	log.Fatal(app.run(mux))
+	if err := app.run(mux); err != nil {
+		if errors.Is(err, http.ErrServerClosed) {
+			logger.Infow("Server stopped")
+			return
+		}
+
+		logger.Fatalw("Server error", "error", err)
+	}
 }

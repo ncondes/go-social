@@ -4,15 +4,18 @@ import (
 	"net/http"
 
 	"github.com/ncondes/go/social/internal/config"
+	"github.com/ncondes/go/social/internal/logging"
 )
 
 type HealthHandler struct {
 	config *config.Config
+	logger logging.Logger
 }
 
-func NewHealthHandler(config *config.Config) *HealthHandler {
+func NewHealthHandler(config *config.Config, logger logging.Logger) *HealthHandler {
 	return &HealthHandler{
 		config: config,
+		logger: logger,
 	}
 }
 
@@ -31,5 +34,5 @@ func (h *HealthHandler) Check(w http.ResponseWriter, r *http.Request) {
 		"env":    h.config.Env,
 	}
 
-	respondWithData(w, http.StatusOK, data)
+	respondWithData(w, http.StatusOK, data, h.logger)
 }

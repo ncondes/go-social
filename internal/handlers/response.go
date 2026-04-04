@@ -7,14 +7,15 @@ import (
 	"net/http"
 
 	"github.com/ncondes/go/social/internal/dtos"
+	"github.com/ncondes/go/social/internal/logging"
 )
 
-func jsonEncode(w http.ResponseWriter, status int, data any) {
+func jsonEncode(w http.ResponseWriter, status int, data any, logger logging.Logger) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
 	if err := json.NewEncoder(w).Encode(data); err != nil {
-		handleInternalServerError(w, nil, err)
+		handleInternalServerError(w, nil, err, logger)
 	}
 }
 
@@ -37,18 +38,18 @@ func jsonDecode(w http.ResponseWriter, r *http.Request, data any) error {
 	return nil
 }
 
-func respondWithError(w http.ResponseWriter, status int, message string) {
-	jsonEncode(w, status, &dtos.ErrorResponseDTO{Error: message})
+func respondWithError(w http.ResponseWriter, status int, message string, logger logging.Logger) {
+	jsonEncode(w, status, &dtos.ErrorResponseDTO{Error: message}, logger)
 }
 
-func respondWithErrors(w http.ResponseWriter, status int, errors []string) {
-	jsonEncode(w, status, &dtos.ErrorsResponseDTO{Errors: errors})
+func respondWithErrors(w http.ResponseWriter, status int, errors []string, logger logging.Logger) {
+	jsonEncode(w, status, &dtos.ErrorsResponseDTO{Errors: errors}, logger)
 }
 
-func respondWithData(w http.ResponseWriter, status int, data any) {
-	jsonEncode(w, status, &dtos.DataResponseDTO{Data: data})
+func respondWithData(w http.ResponseWriter, status int, data any, logger logging.Logger) {
+	jsonEncode(w, status, &dtos.DataResponseDTO{Data: data}, logger)
 }
 
-func respondWithPaginatedData[T any](w http.ResponseWriter, status int, data []T, pagination dtos.CursorBasedPaginationMetaDTO) {
-	jsonEncode(w, status, &dtos.CursorBasedPaginationResponseDTO[T]{Data: data, Pagination: pagination})
+func respondWithPaginatedData[T any](w http.ResponseWriter, status int, data []T, pagination dtos.CursorBasedPaginationMetaDTO, logger logging.Logger) {
+	jsonEncode(w, status, &dtos.CursorBasedPaginationResponseDTO[T]{Data: data, Pagination: pagination}, logger)
 }

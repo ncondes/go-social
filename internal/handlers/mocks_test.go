@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ncondes/go/social/internal/domain"
+	"github.com/ncondes/go/social/internal/logging"
 )
 
 type mockPostService struct {
@@ -58,3 +59,14 @@ func (m *mockPostService) DeletePost(ctx context.Context, postID int64) error {
 }
 
 var _ domain.PostServiceInterface = (*mockPostService)(nil)
+
+type noopLogger struct{}
+
+func (l *noopLogger) Errorw(msg string, keysAndValues ...any) {}
+func (l *noopLogger) Infow(msg string, keysAndValues ...any)  {}
+func (l *noopLogger) Warnw(msg string, keysAndValues ...any)  {}
+func (l *noopLogger) Debugw(msg string, keysAndValues ...any) {}
+func (l *noopLogger) Fatalw(msg string, keysAndValues ...any) {}
+func (l *noopLogger) Sync() error                             { return nil }
+
+var testLogger logging.Logger = &noopLogger{}

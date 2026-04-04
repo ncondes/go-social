@@ -4,14 +4,19 @@ import (
 	"net/http"
 
 	"github.com/ncondes/go/social/internal/domain"
+	"github.com/ncondes/go/social/internal/logging"
 )
 
 type UserHandler struct {
 	userService domain.UserServiceInterface
+	logger      logging.Logger
 }
 
-func NewUserHandler(userService domain.UserServiceInterface) *UserHandler {
-	return &UserHandler{userService: userService}
+func NewUserHandler(userService domain.UserServiceInterface, logger logging.Logger) *UserHandler {
+	return &UserHandler{
+		userService: userService,
+		logger:      logger,
+	}
 }
 
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -19,11 +24,11 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		FirstName: "Robertico",
 	})
 	if err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, h.logger)
 		return
 	}
 
-	respondWithData(w, http.StatusCreated, nil)
+	respondWithData(w, http.StatusCreated, nil, h.logger)
 }
 
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
@@ -31,11 +36,11 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.GetUser(r.Context(), userID)
 	if err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, h.logger)
 		return
 	}
 
-	respondWithData(w, http.StatusOK, user)
+	respondWithData(w, http.StatusOK, user, h.logger)
 }
 
 func (h *UserHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +49,7 @@ func (h *UserHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
 	followerID := int64(1)
 
 	if err := h.userService.FollowUser(r.Context(), userID, followerID); err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, h.logger)
 		return
 	}
 
@@ -57,7 +62,7 @@ func (h *UserHandler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 	followerID := int64(1)
 
 	if err := h.userService.UnfollowUser(r.Context(), userID, followerID); err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, h.logger)
 		return
 	}
 
