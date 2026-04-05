@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	Addr       string
-	DB         DBConfig
-	Env        string
-	APIBaseURL string
-	MailConfig MailConfig
+	Addr        string
+	DB          DBConfig
+	Env         string
+	APIBaseURL  string
+	MailConfig  MailConfig
+	FrontendURL string
 }
 
 type DBConfig struct {
@@ -23,7 +24,9 @@ type DBConfig struct {
 }
 
 type MailConfig struct {
-	Exp time.Duration
+	FromEmail string
+	APIKey    string
+	Exp       time.Duration
 }
 
 func Load() *Config {
@@ -35,10 +38,13 @@ func Load() *Config {
 			MaxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 5),
 			MaxIdleTime:  env.GetDuration("DB_MAX_IDLE_TIME", 5*time.Minute),
 		},
-		Env:        env.GetString("ENV", "development"),
-		APIBaseURL: env.GetString("API_BASE_URL", "localhost:8080"),
+		Env:         env.GetString("ENV", "development"),
+		APIBaseURL:  env.GetString("API_BASE_URL", "localhost:8080"),
+		FrontendURL: env.GetString("FRONTEND_URL", "http://localhost:3000"),
 		MailConfig: MailConfig{
-			Exp: env.GetDuration("MAIL_EXPIRATION_TIME", 24*time.Hour),
+			FromEmail: env.GetString("MAIL_FROM_EMAIL", "noreply@example.com"),
+			APIKey:    env.GetString("MAIL_API_KEY", ""),
+			Exp:       env.GetDuration("MAIL_EXPIRATION_TIME", 24*time.Hour),
 		},
 	}
 }

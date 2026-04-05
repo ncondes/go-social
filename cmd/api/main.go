@@ -9,6 +9,7 @@ import (
 	"github.com/ncondes/go/social/internal/db"
 	"github.com/ncondes/go/social/internal/handlers"
 	"github.com/ncondes/go/social/internal/logging"
+	"github.com/ncondes/go/social/internal/mailer"
 	"github.com/ncondes/go/social/internal/repositories"
 	"github.com/ncondes/go/social/internal/services"
 	"go.uber.org/zap"
@@ -54,7 +55,8 @@ func main() {
 	defer db.Close()
 
 	repositories := repositories.New(db, config)
-	services := services.New(repositories)
+	mailer := mailer.NewSendGridMailer(config.MailConfig.FromEmail, config.MailConfig.APIKey)
+	services := services.New(repositories, config, mailer, logger)
 	validator := handlers.NewValidator()
 	handlers := handlers.New(config, services, validator, logger)
 

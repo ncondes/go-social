@@ -117,7 +117,48 @@ func (r *UserRepository) ActivateUser(ctx context.Context, token string) error {
 
 		return nil
 	})
+}
 
+func (r *UserRepository) DeleteUser(ctx context.Context, userID int64) error {
+	return withTx(r.db, ctx, func(tx *sql.Tx) error {
+		if err := r.deleteUserWithTx(ctx, tx, userID); err != nil {
+			return err
+		}
+
+		if err := r.deleteUserInvitationWithTx(ctx, tx, userID); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (r *UserRepository) deleteUserWithTx(ctx context.Context, tx *sql.Tx, userID int64) error {
+	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
+	defer cancel()
+
+	query := `DELETE FROM users WHERE id = $1`
+
+	_, err := tx.ExecContext(ctx, query, userID)
+	if err != nil {
+		return handleDBError(err, resourceUser)
+	}
+
+	return nil
+}
+
+func (r *UserRepository) deleteUserInvitationWithTx(ctx context.Context, tx *sql.Tx, userID int64) error {
+	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
+	defer cancel()
+
+	query := `DELETE FROM user_invitations WHERE user_id = $1`
+
+	_, err := tx.ExecContext(ctx, query, userID)
+	if err != nil {
+		return handleDBError(err, resourceUserInvitation)
+	}
+
+	return nil
 }
 
 func (r *UserRepository) createUserWithTx(ctx context.Context, tx *sql.Tx, user *domain.User) error {
@@ -274,22 +315,4 @@ func buildUserUpdateQuery(userID int64, u *domain.UserUpdate) (string, []any, er
 	)
 	args = append(args, userID)
 	return query, args, nil
-}
-
-func (r *UserRepository) deleteUserInvitationWithTx(
-	ctx context.Context,
-	tx *sql.Tx,
-	userID int64,
-) error {
-	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
-	defer cancel()
-
-	query := `DELETE FROM user_invitations WHERE user_id = $1`
-
-	_, err := tx.ExecContext(ctx, query, userID)
-	if err != nil {
-		return handleDBError(err, resourceUserInvitation)
-	}
-
-	return nil
 }

@@ -61,6 +61,7 @@ type UserRepositoryInterface interface {
 	GetUser(ctx context.Context, id int64) (*User, error)
 	CreateUserAndInvitation(ctx context.Context, user *User, method string, token string) error
 	ActivateUser(ctx context.Context, token string) error
+	DeleteUser(ctx context.Context, userID int64) error
 }
 
 type UserServiceInterface interface {

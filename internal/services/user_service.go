@@ -4,18 +4,37 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/ncondes/go/social/internal/config"
 	"github.com/ncondes/go/social/internal/domain"
+	"github.com/ncondes/go/social/internal/logging"
+	"github.com/ncondes/go/social/internal/mailer"
 )
 
 type UserService struct {
 	userRepository     domain.UserRepositoryInterface
 	followerRepository domain.FollowerRepositoryInterface
+	config             *config.Config
+	mailer             mailer.Mailer
+	logger             logging.Logger
 }
 
-func NewUserService(userRepository domain.UserRepositoryInterface, followerRepository domain.FollowerRepositoryInterface) *UserService {
-	return &UserService{userRepository: userRepository, followerRepository: followerRepository}
+func NewUserService(
+	userRepository domain.UserRepositoryInterface,
+	followerRepository domain.FollowerRepositoryInterface,
+	config *config.Config,
+	mailer mailer.Mailer,
+	logger logging.Logger,
+) *UserService {
+	return &UserService{
+		userRepository:     userRepository,
+		followerRepository: followerRepository,
+		config:             config,
+		mailer:             mailer,
+		logger:             logger,
+	}
 }
 
 func (s *UserService) CreateUser(ctx context.Context, user *domain.User) error {
@@ -56,7 +75,32 @@ func (s *UserService) RegisterUserWithInvitation(ctx context.Context, registerUs
 		return nil, err
 	}
 
-	// TODO: Send the invitation (email or SMS)
+	isSandbox := s.config.Env != "production"
+	activationURL := fmt.Sprintf("%s/activate?token=%s", s.config.FrontendURL, plainToken)
+
+	if err := s.mailer.Send(ctx, mailer.UserInvitationTemplate, mailer.Mail{
+		To: []mailer.To{
+			{
+				Name:  user.FirstName,
+				Email: user.Email,
+			},
+		},
+		Args: mailer.InvitationEmailData{
+			To: mailer.To{
+				Name:  user.FirstName,
+				Email: user.Email,
+			},
+			ActivationURL: activationURL,
+		},
+	}, isSandbox); err != nil {
+		s.logger.Errorw("Failed to send invitation email", "error", err)
+		// Rollback user creation if email sending fails (SAGA pattern)
+		if err := s.userRepository.DeleteUser(ctx, user.ID); err != nil {
+			s.logger.Errorw("Failed to delete user after email sending failed", "error", err)
+		}
+
+		return nil, err
+	}
 
 	return &domain.UserWithInvitationToken{
 		User:  user,
