@@ -40,10 +40,10 @@ func Load() *Config {
 		},
 		Env:         env.GetString("ENV", "development"),
 		APIBaseURL:  env.GetString("API_BASE_URL", "localhost:8080"),
-		FrontendURL: env.GetString("FRONTEND_URL", "http://localhost:3000"),
+		FrontendURL: env.GetString("FRONTEND_URL", "http://localhost:5173"),
 		MailConfig: MailConfig{
 			FromEmail: env.GetString("MAIL_FROM_EMAIL", "noreply@example.com"),
-			APIKey:    env.GetString("MAIL_API_KEY", ""),
+			APIKey:    env.GetString("SENDGRID_API_KEY", ""),
 			Exp:       env.GetDuration("MAIL_EXPIRATION_TIME", 24*time.Hour),
 		},
 	}

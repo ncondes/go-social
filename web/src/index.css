@@ -1,0 +1,140 @@
+:root {
+  --gs-white: #ffffff;
+  --gs-bg: #f8fafc;
+  --gs-navy: #0f172a;
+  --gs-navy-soft: #1e293b;
+  --gs-muted: #64748b;
+  --gs-border: #e2e8f0;
+  --gs-accent: #1e3a5f;
+  --gs-accent-hover: #172554;
+  --gs-success: #0d9488;
+  --gs-error: #dc2626;
+  --gs-radius: 12px;
+  --gs-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--gs-font);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--gs-navy);
+  background: var(--gs-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.gs-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+}
+
+.gs-panel {
+  width: 100%;
+  max-width: 28rem;
+  padding: 2rem 1.75rem;
+  background: var(--gs-white);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius);
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.06),
+    0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+.gs-panel--narrow {
+  max-width: 24rem;
+}
+
+.gs-brand {
+  margin: 0 0 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gs-accent);
+}
+
+.gs-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
+  color: var(--gs-navy);
+}
+
+.gs-title--center {
+  text-align: center;
+}
+
+.gs-muted {
+  margin: 0 0 1rem;
+  color: var(--gs-muted);
+  font-size: 0.9375rem;
+}
+
+.gs-muted:last-child {
+  margin-bottom: 0;
+}
+
+.gs-muted--center {
+  text-align: center;
+}
+
+.gs-small {
+  font-size: 0.8125rem;
+}
+
+.gs-code {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  font-size: 0.8em;
+  padding: 0.15em 0.45em;
+  background: var(--gs-bg);
+  color: var(--gs-navy-soft);
+  border: 1px solid var(--gs-border);
+  border-radius: 6px;
+}
+
+.gs-spinner {
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: 0 auto 1.25rem;
+  border: 2px solid var(--gs-border);
+  border-top-color: var(--gs-accent);
+  border-radius: 50%;
+  animation: gs-spin 0.65s linear infinite;
+}
+
+@keyframes gs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.gs-success-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+  color: var(--gs-success);
+}
+
+.gs-error-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+  color: var(--gs-error);
+}

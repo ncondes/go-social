@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -8,8 +9,10 @@ import (
 	"github.com/ncondes/go/social/internal/logging"
 )
 
-// Maps domain errors to HTTP responses
 func handleError(w http.ResponseWriter, r *http.Request, err error, logger logging.Logger) {
+	if errors.Is(err, context.Canceled) {
+		return
+	}
 	switch {
 	case
 		errors.Is(err, domain.ErrPostNotFound),
@@ -32,6 +35,9 @@ func handleError(w http.ResponseWriter, r *http.Request, err error, logger loggi
 }
 
 func handleInternalServerError(w http.ResponseWriter, r *http.Request, err error, logger logging.Logger) {
+	if err != nil && errors.Is(err, context.Canceled) {
+		return
+	}
 	switch {
 	case r != nil && err != nil:
 		logger.Errorw("internal server error",

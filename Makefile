@@ -122,10 +122,16 @@ test-coverage:
 
 # ==================== Development ====================
 
-.PHONY: dev
+.PHONY: dev dev-api web
 dev:
-	@echo "Starting development server with hot reload..."
+	@echo "Starting API (air) and Vite UI in parallel..."
+	@$(MAKE) -j2 dev-api web
+
+dev-api:
 	@air
+
+web:
+	@cd web && npm run dev
 
 # ==================== Swagger ====================
 .PHONY: swagger
@@ -163,7 +169,8 @@ help:
 	@echo "    test-coverage     - Run tests with coverage report"
 	@echo ""
 	@echo "  Development:"
-	@echo "    dev               - Run with hot reload (requires air)"
+	@echo "    dev               - Run API (air) and Vite UI together"
+	@echo "    web               - Run Vite UI only (./web)"
 	@echo ""
 	@echo "  Swagger:"
 	@echo "    swagger           - Generate Swagger documentation"
