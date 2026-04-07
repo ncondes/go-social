@@ -47,11 +47,13 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user := getAuthenticatedUserFromContext(r.Context())
+
 	post := domain.Post{
 		Title:   createPostDTO.Title,
 		Content: createPostDTO.Content,
 		Tags:    h.deduplicateTags(createPostDTO.Tags),
-		UserID:  1, // TODO: get user ID from auth middleware in the future
+		UserID:  user.ID,
 	}
 
 	if err := h.postService.CreatePost(r.Context(), &post); err != nil {

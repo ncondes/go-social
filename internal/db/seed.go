@@ -12,6 +12,8 @@ import (
 	"github.com/ncondes/go/social/internal/repositories"
 )
 
+const testPassword = "Qwerty123$"
+
 func Flush(db *sql.DB) {
 	ctx := context.Background()
 
@@ -74,13 +76,18 @@ func generateUsers(amount int) []*domain.User {
 		username := strings.ToLower(string(firstName[0])+strings.TrimSpace(lastName)) + strconv.Itoa(i)
 		email := username + "@" + seedEmailDomains[rand.Intn(len(seedEmailDomains))]
 
-		users[i] = &domain.User{
+		user := &domain.User{
 			FirstName: firstName,
 			LastName:  lastName,
 			Username:  username,
 			Email:     email,
-			Password:  "Qwerty123$",
 		}
+
+		if err := user.HashPassword(testPassword); err != nil {
+			log.Printf("Error hashing password for user %s: %v\n", username, err)
+		}
+
+		users[i] = user
 	}
 
 	return users

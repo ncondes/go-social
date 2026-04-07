@@ -7,10 +7,12 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/ncondes/go/social/internal/auth"
 	"github.com/ncondes/go/social/internal/config"
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/logging"
 	"github.com/ncondes/go/social/internal/mailer"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
@@ -19,6 +21,7 @@ type UserService struct {
 	config             *config.Config
 	mailer             mailer.Mailer
 	logger             logging.Logger
+	authenticator      *auth.JWTAuthenticator
 }
 
 func NewUserService(
@@ -27,6 +30,7 @@ func NewUserService(
 	config *config.Config,
 	mailer mailer.Mailer,
 	logger logging.Logger,
+	authenticator *auth.JWTAuthenticator,
 ) *UserService {
 	return &UserService{
 		userRepository:     userRepository,
@@ -34,6 +38,7 @@ func NewUserService(
 		config:             config,
 		mailer:             mailer,
 		logger:             logger,
+		authenticator:      authenticator,
 	}
 }
 
@@ -110,4 +115,30 @@ func (s *UserService) RegisterUserWithInvitation(ctx context.Context, registerUs
 
 func (s *UserService) ActivateUser(ctx context.Context, token string) error {
 	return s.userRepository.ActivateUser(ctx, token)
+}
+
+func (s *UserService) AuthenticateUser(ctx context.Context, email, password string) (string, error) {
+	user, err := s.userRepository.GetUserByEmail(ctx, email)
+	if err != nil {
+		return "", domain.ErrInvalidCredentials
+	}
+
+	if err := s.verifyPassword(user, password); err != nil {
+		return "", domain.ErrInvalidCredentials
+	}
+
+	token, err := s.authenticator.GenerateToken(user.ID)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
+}
+
+func (s *UserService) verifyPassword(user *domain.User, password string) error {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return err
+	}
+
+	return nil
 }

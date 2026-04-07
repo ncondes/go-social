@@ -59,6 +59,7 @@ type RegisterUserInput struct {
 type UserRepositoryInterface interface {
 	CreateUser(ctx context.Context, user *User) error
 	GetUser(ctx context.Context, id int64) (*User, error)
+	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	CreateUserAndInvitation(ctx context.Context, user *User, method string, token string) error
 	ActivateUser(ctx context.Context, token string) error
 	DeleteUser(ctx context.Context, userID int64) error
@@ -71,6 +72,7 @@ type UserServiceInterface interface {
 	UnfollowUser(ctx context.Context, userID int64, followerID int64) error
 	RegisterUserWithInvitation(ctx context.Context, registerUserInput *RegisterUserInput) (*UserWithInvitationToken, error)
 	ActivateUser(ctx context.Context, token string) error
+	AuthenticateUser(ctx context.Context, email, password string) (string, error)
 }
 
 var (
@@ -78,4 +80,5 @@ var (
 	ErrUserEmailTaken     = errors.New("user email is already in use")
 	ErrUserUsernameTaken  = errors.New("user username is already in use")
 	ErrNoUserUpdateFields = errors.New("no fields to update on user")
+	ErrInvalidCredentials = errors.New("invalid credentials")
 )

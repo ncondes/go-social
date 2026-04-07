@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/ncondes/go/social/internal/auth"
 	"github.com/ncondes/go/social/internal/config"
 	"github.com/ncondes/go/social/internal/logging"
 	"github.com/ncondes/go/social/internal/mailer"
@@ -19,6 +20,7 @@ func New(
 	config *config.Config,
 	mailer mailer.Mailer,
 	logger logging.Logger,
+	authenticator *auth.JWTAuthenticator,
 ) *Services {
 	return &Services{
 		UserService: NewUserService(
@@ -27,6 +29,7 @@ func New(
 			config,
 			mailer,
 			logger,
+			authenticator,
 		),
 		PostService:    NewPostService(repositories.PostRepository),
 		CommentService: NewCommentService(repositories.CommentRepository),

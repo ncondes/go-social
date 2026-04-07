@@ -14,6 +14,8 @@ func handleError(w http.ResponseWriter, r *http.Request, err error, logger loggi
 		return
 	}
 	switch {
+	case errors.Is(err, domain.ErrInvalidCredentials):
+		respondWithError(w, http.StatusUnauthorized, err.Error(), logger)
 	case
 		errors.Is(err, domain.ErrPostNotFound),
 		errors.Is(err, domain.ErrUserNotFound),

@@ -54,12 +54,57 @@ func (r *UserRepository) GetUser(ctx context.Context, id int64) (*domain.User, e
 	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
 	defer cancel()
 
-	query := `SELECT id, first_name, last_name, username, email, password, is_active, created_at, updated_at
+	query := `SELECT
+		id,
+		first_name,
+		last_name,
+		username,
+		email,
+		password,
+		is_active,
+		created_at,
+		updated_at
 	FROM users
-	WHERE id = $1`
+	WHERE id = $1 AND is_active = true`
 
 	user := &domain.User{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&user.ID,
+		&user.FirstName,
+		&user.LastName,
+		&user.Username,
+		&user.Email,
+		&user.Password,
+		&user.IsActive,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, handleDBError(err, resourceUser)
+	}
+
+	return user, nil
+}
+
+func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
+	defer cancel()
+
+	query := `SELECT
+		id,
+		first_name,
+		last_name,
+		username,
+		email,
+		password,
+		is_active,
+		created_at,
+		updated_at
+	FROM users
+	WHERE email = $1 AND is_active = true`
+
+	user := &domain.User{}
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.FirstName,
 		&user.LastName,

@@ -14,6 +14,24 @@ type Config struct {
 	APIBaseURL  string
 	MailConfig  MailConfig
 	FrontendURL string
+	Auth        AuthConfig
+}
+
+type AuthConfig struct {
+	Basic BasicAuthConfig
+	JWT   JWTConfig
+}
+
+type JWTConfig struct {
+	Secret   string
+	Issuer   string
+	Audience string
+	Duration time.Duration
+}
+
+type BasicAuthConfig struct {
+	Username string
+	Password string
 }
 
 type DBConfig struct {
@@ -45,6 +63,18 @@ func Load() *Config {
 			FromEmail: env.GetString("MAIL_FROM_EMAIL", "noreply@example.com"),
 			APIKey:    env.GetString("SENDGRID_API_KEY", ""),
 			Exp:       env.GetDuration("MAIL_EXPIRATION_TIME", 24*time.Hour),
+		},
+		Auth: AuthConfig{
+			Basic: BasicAuthConfig{
+				Username: env.GetString("BASIC_AUTH_USERNAME", "admin"),
+				Password: env.GetString("BASIC_AUTH_PASSWORD", "password"),
+			},
+			JWT: JWTConfig{
+				Secret:   env.GetString("JWT_SECRET", ""),
+				Issuer:   env.GetString("JWT_ISSUER", "social"),
+				Audience: env.GetString("JWT_AUDIENCE", "social"),
+				Duration: env.GetDuration("JWT_DURATION", 24*time.Hour),
+			},
 		},
 	}
 }

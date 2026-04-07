@@ -45,10 +45,9 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
 	userID := getUserIDFromContext(r.Context())
-	// TODO: get follower ID from auth middleware in the future
-	followerID := int64(1)
+	follower := getAuthenticatedUserFromContext(r.Context())
 
-	if err := h.userService.FollowUser(r.Context(), userID, followerID); err != nil {
+	if err := h.userService.FollowUser(r.Context(), userID, follower.ID); err != nil {
 		handleError(w, r, err, h.logger)
 		return
 	}
@@ -58,10 +57,9 @@ func (h *UserHandler) FollowUser(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandler) UnfollowUser(w http.ResponseWriter, r *http.Request) {
 	userID := getUserIDFromContext(r.Context())
-	// TODO: get follower ID from auth middleware in the future
-	followerID := int64(1)
+	follower := getAuthenticatedUserFromContext(r.Context())
 
-	if err := h.userService.UnfollowUser(r.Context(), userID, followerID); err != nil {
+	if err := h.userService.UnfollowUser(r.Context(), userID, follower.ID); err != nil {
 		handleError(w, r, err, h.logger)
 		return
 	}

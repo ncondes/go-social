@@ -24,7 +24,7 @@ func NewFeedHandler(feedService domain.FeedServiceInterface, logger logging.Logg
 }
 
 func (h *FeedHandler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
-	userID := int64(1) // TODO: get userID from auth middleware in the future
+	user := getAuthenticatedUserFromContext(r.Context())
 
 	options, err := h.parseFeedQueryOptions(r)
 	if err != nil {
@@ -32,7 +32,7 @@ func (h *FeedHandler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	feedPosts, err := h.feedService.GetUserFeed(r.Context(), userID, options)
+	feedPosts, err := h.feedService.GetUserFeed(r.Context(), user.ID, options)
 	if err != nil {
 		handleError(w, r, err, h.logger)
 		return

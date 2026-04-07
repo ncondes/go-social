@@ -1,12 +1,17 @@
 package handlers
 
-import "context"
+import (
+	"context"
+
+	"github.com/ncondes/go/social/internal/domain"
+)
 
 type contextKey string
 
 const (
-	postIDContextKey contextKey = "postID"
-	userIDContextKey contextKey = "userID"
+	postIDContextKey            contextKey = "postID"
+	userIDContextKey            contextKey = "userID"
+	authenticatedUserContextKey contextKey = "authenticatedUser"
 )
 
 func getPostIDFromContext(ctx context.Context) int64 {
@@ -17,4 +22,9 @@ func getPostIDFromContext(ctx context.Context) int64 {
 func getUserIDFromContext(ctx context.Context) int64 {
 	userID, _ := ctx.Value(userIDContextKey).(int64)
 	return userID
+}
+
+func getAuthenticatedUserFromContext(ctx context.Context) *domain.User {
+	user, _ := ctx.Value(authenticatedUserContextKey).(*domain.User)
+	return user
 }

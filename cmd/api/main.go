@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/joho/godotenv"
+	"github.com/ncondes/go/social/internal/auth"
 	"github.com/ncondes/go/social/internal/config"
 	"github.com/ncondes/go/social/internal/db"
 	"github.com/ncondes/go/social/internal/handlers"
@@ -56,14 +57,17 @@ func main() {
 
 	repositories := repositories.New(db, config)
 	mailer := mailer.NewSendGridMailer(config.MailConfig.FromEmail, config.MailConfig.APIKey)
-	services := services.New(repositories, config, mailer, logger)
+	authenticator := auth.NewJWTAuthenticator(config.Auth.JWT.Secret, config.Auth.JWT.Audience, config.Auth.JWT.Issuer, config.Auth.JWT.Duration)
+	services := services.New(repositories, config, mailer, logger, authenticator)
 	validator := handlers.NewValidator()
 	handlers := handlers.New(config, services, validator, logger)
 
 	app := &application{
-		config:   config,
-		handlers: handlers,
-		logger:   logger,
+		config:        config,
+		handlers:      handlers,
+		logger:        logger,
+		services:      services,
+		authenticator: authenticator,
 	}
 
 	mux := app.mount()

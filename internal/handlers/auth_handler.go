@@ -100,3 +100,40 @@ func (h *AuthHandler) ActivateUser(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// GenerateToken godoc
+
+// @Summary		Generate authentication token
+// @Description	Generate an authentication token
+// @Tags			auth
+// @Accept			json
+// @Produce		json
+// @Param			body	body		dtos.GenerateTokenDTO	true	"Token generation request"
+// @Success		201		{object}	string					"Token generated successfully"
+// @Failure		400		{object}	dtos.ErrorsResponseDTO	"Validation errors"
+// @Failure		401		{object}	dtos.ErrorResponseDTO	"Unauthorized"
+// @Failure		500		{object}	dtos.ErrorResponseDTO	"Internal server error"
+// @Router			/auth/token [post]
+func (h *AuthHandler) GenerateToken(w http.ResponseWriter, r *http.Request) {
+	var generateTokenDTO *dtos.GenerateTokenDTO
+
+	if err := jsonDecode(w, r, &generateTokenDTO); err != nil {
+		respondWithError(w, http.StatusBadRequest, err.Error(), h.logger)
+		return
+	}
+
+	if err := h.validator.validateStruct(generateTokenDTO); err != nil {
+		respondWithErrors(w, http.StatusBadRequest, err, h.logger)
+		return
+	}
+
+	token, err := h.userService.AuthenticateUser(r.Context(), generateTokenDTO.Email, generateTokenDTO.Password)
+	if err != nil {
+		handleError(w, r, err, h.logger)
+		return
+	}
+
+	response := new(dtos.GenerateTokenResponseDTO).FromString(token)
+
+	respondWithData(w, http.StatusCreated, response, h.logger)
+}
