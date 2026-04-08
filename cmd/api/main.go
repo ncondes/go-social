@@ -6,6 +6,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/ncondes/go/social/internal/auth"
+	"github.com/ncondes/go/social/internal/cache"
 	"github.com/ncondes/go/social/internal/config"
 	"github.com/ncondes/go/social/internal/db"
 	"github.com/ncondes/go/social/internal/handlers"
@@ -13,6 +14,7 @@ import (
 	"github.com/ncondes/go/social/internal/mailer"
 	"github.com/ncondes/go/social/internal/repositories"
 	"github.com/ncondes/go/social/internal/services"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -55,13 +57,46 @@ func main() {
 	logger.Infow("Connected to database successfully")
 	defer db.Close()
 
+	var rc *redis.Client
+
+	if config.Redis.Enabled {
+		rc = cache.NewRedisClient(
+			config.Redis.Addr,
+			config.Redis.Password,
+			config.Redis.DB,
+		)
+
+		logger.Infow("Connected to Redis successfully")
+	} else {
+		rc = nil
+	}
+
+	cacheStorage := cache.NewCacheStorage(rc)
+
 	repositories := repositories.New(db, config)
 	mailer := mailer.NewSendGridMailer(config.MailConfig.FromEmail, config.MailConfig.APIKey)
-	authenticator := auth.NewJWTAuthenticator(config.Auth.JWT.Secret, config.Auth.JWT.Audience, config.Auth.JWT.Issuer, config.Auth.JWT.Duration)
-	services := services.New(repositories, config, mailer, logger, authenticator)
+	authenticator := auth.NewJWTAuthenticator(
+		config.Auth.JWT.Secret,
+		config.Auth.JWT.Audience,
+		config.Auth.JWT.Issuer,
+		config.Auth.JWT.Duration,
+	)
+	services := services.New(
+		repositories,
+		config,
+		mailer,
+		logger,
+		authenticator,
+		cacheStorage,
+	)
 	validator := handlers.NewValidator()
 	authorizer := auth.NewAuthorizer()
-	handlers := handlers.New(config, services, validator, logger, authorizer)
+	handlers := handlers.New(config,
+		services,
+		validator,
+		logger,
+		authorizer,
+	)
 
 	app := &application{
 		config:        config,

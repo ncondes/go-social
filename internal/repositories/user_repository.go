@@ -79,7 +79,7 @@ func (r *UserRepository) GetUser(ctx context.Context, id int64) (*domain.User, e
 		r.level
 	FROM users u
 	INNER JOIN roles r ON u.role_id = r.id
-	WHERE id = $1 AND is_active = true`
+	WHERE u.id = $1 AND u.is_active = true`
 
 	user := &domain.User{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
@@ -124,7 +124,7 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*dom
 		r.level
 	FROM users u
 	INNER JOIN roles r ON u.role_id = r.id
-	WHERE email = $1 AND is_active = true`
+	WHERE u.email = $1 AND u.is_active = true`
 
 	user := &domain.User{}
 	err := r.db.QueryRowContext(ctx, query, email).Scan(

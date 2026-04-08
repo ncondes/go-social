@@ -19,6 +19,7 @@ type UserService struct {
 	userRepository     domain.UserRepositoryInterface
 	followerRepository domain.FollowerRepositoryInterface
 	roleRepository     domain.RoleRepositoryInterface
+	userStorage        domain.UserStorageInterface
 	config             *config.Config
 	mailer             mailer.Mailer
 	logger             logging.Logger
@@ -29,6 +30,7 @@ func NewUserService(
 	userRepository domain.UserRepositoryInterface,
 	followerRepository domain.FollowerRepositoryInterface,
 	roleRepository domain.RoleRepositoryInterface,
+	userStorage domain.UserStorageInterface,
 	config *config.Config,
 	mailer mailer.Mailer,
 	logger logging.Logger,
@@ -38,6 +40,7 @@ func NewUserService(
 		userRepository:     userRepository,
 		followerRepository: followerRepository,
 		roleRepository:     roleRepository,
+		userStorage:        userStorage,
 		config:             config,
 		mailer:             mailer,
 		logger:             logger,
@@ -50,7 +53,32 @@ func (s *UserService) CreateUser(ctx context.Context, user *domain.User) error {
 }
 
 func (s *UserService) GetUser(ctx context.Context, id int64) (*domain.User, error) {
-	return s.userRepository.GetUser(ctx, id)
+	// Try cache first (if available)
+	if s.userStorage != nil {
+		user, err := s.userStorage.Get(ctx, id)
+		if err != nil {
+			s.logger.Errorw("failed to get user from cache", "error", err, "userID", id)
+		}
+
+		if user != nil {
+			return user, nil
+		}
+	}
+
+	// Cache miss or unavailable - fetch from database
+	user, err := s.userRepository.GetUser(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate cache for next time (if available)
+	if s.userStorage != nil {
+		if err := s.userStorage.Set(ctx, id, user); err != nil {
+			s.logger.Errorw("failed to set user in cache", "error", err, "userID", id)
+		}
+	}
+
+	return user, nil
 }
 
 func (s *UserService) FollowUser(ctx context.Context, userID int64, followerID int64) error {

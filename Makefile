@@ -1,6 +1,55 @@
 include .env
 MIGRATIONS_PATH = ./cmd/db/migrations
 
+.DEFAULT_GOAL := help
+
+# ==================== Docker & Project Setup ====================
+
+.PHONY: setup
+setup:
+	@echo "Setting up the project..."
+	@echo "Starting Docker services..."
+	@docker compose up -d
+	@sleep 3
+	@echo "Resetting database migrations..."
+	@migrate -path $(MIGRATIONS_PATH) -database $(DB_ADDR) drop -f || true
+	@echo "Running migrations..."
+	@$(MAKE) migrate-up
+	@echo "Seeding database..."
+	@$(MAKE) db-seed
+	@echo "Setup complete! Run \033[1;32mmake dev\033[0m to start the API"
+
+.PHONY: docker-up
+docker-up:
+	@echo "Starting all Docker services..."
+	@docker compose up -d
+	@echo "Services started:"
+	@echo "   - PostgreSQL (dev):  localhost:5432"
+	@echo "   - PostgreSQL (test): localhost:5433"
+	@echo "   - Redis:             localhost:6379"
+	@echo "   - Web UI:            http://localhost:5173"
+	@echo "   - Redis Commander:   http://localhost:8081"
+
+.PHONY: docker-down
+docker-down:
+	@echo "Stopping all Docker services..."
+	@docker compose down
+	@echo "All services stopped"
+
+.PHONY: docker-restart
+docker-restart:
+	@echo "Restarting all Docker services..."
+	@docker compose restart
+	@echo "Services restarted"
+
+.PHONY: docker-logs
+docker-logs:
+	@docker compose logs -f
+
+.PHONY: docker-ps
+docker-ps:
+	@docker compose ps
+
 # ==================== Migrations ====================
 
 .PHONY: migration
@@ -41,30 +90,6 @@ db-stop:
 	@docker compose stop social-db
 	@echo "Development database stopped"
 
-.PHONY: db-start-test
-db-start-test:
-	@echo "Starting test database..."
-	@docker compose up -d social-test-db
-	@echo "Test database started"
-
-.PHONY: db-stop-test
-db-stop-test:
-	@echo "Stopping test database..."
-	@docker compose stop social-test-db
-	@echo "Test database stopped"
-
-.PHONY: db-start-all
-db-start-all:
-	@echo "Starting all databases..."
-	@docker compose up -d
-	@echo "All databases started"
-
-.PHONY: db-stop-all
-db-stop-all:
-	@echo "Stopping all databases..."
-	@docker compose stop
-	@echo "All databases stopped"
-
 .PHONY: db-seed
 db-seed:
 	@echo "Seeding database..."
@@ -76,6 +101,22 @@ db-flush:
 	@echo "Flushing database..."
 	@go run cmd/db/flush/main.go
 	@echo "Database flushed successfully"
+
+.PHONY: db-reset
+db-reset:
+	@echo "Resetting database..."
+	@$(MAKE) db-flush
+	@$(MAKE) migrate-up
+	@$(MAKE) db-seed
+	@echo "Database reset complete"
+
+.PHONY: db-reset-hard
+db-reset-hard:
+	@echo "Hard resetting database (drops all tables and migrations)..."
+	@migrate -path $(MIGRATIONS_PATH) -database $(DB_ADDR) drop -f || true
+	@$(MAKE) migrate-up
+	@$(MAKE) db-seed
+	@echo "Database hard reset complete"
 
 # ==================== Testing ====================
 
@@ -122,16 +163,40 @@ test-coverage:
 
 # ==================== Development ====================
 
-.PHONY: dev dev-api web
+.PHONY: dev
 dev:
-	@echo "Starting API (air) and Vite UI in parallel..."
-	@$(MAKE) -j2 dev-api web
-
-dev-api:
+	@echo "Starting API with hot reload (air)..."
 	@air
 
-web:
-	@cd web && npm run dev
+.PHONY: run
+run:
+	@echo "Starting API (without hot reload)..."
+	@go run cmd/api/main.go
+
+# ==================== Web UI (Activation) ====================
+
+.PHONY: web-up
+web-up:
+	@echo "Starting web UI..."
+	@docker compose up -d social-web
+	@echo "Web UI started at http://localhost:5173"
+
+.PHONY: web-down
+web-down:
+	@echo "Stopping web UI..."
+	@docker compose stop social-web
+	@echo "Web UI stopped"
+
+.PHONY: web-logs
+web-logs:
+	@docker compose logs -f social-web
+
+.PHONY: web-rebuild
+web-rebuild:
+	@echo "Rebuilding web UI..."
+	@docker compose build social-web
+	@docker compose up -d social-web
+	@echo "Web UI rebuilt and restarted"
 
 # ==================== Swagger ====================
 .PHONY: swagger
@@ -144,37 +209,56 @@ swagger:
 
 .PHONY: help
 help:
-	@echo "Available targets:"
-	@echo "  Migrations:"
-	@echo "    migration         - Create a new migration"
-	@echo "    migrate-up        - Apply migrations to dev database"
-	@echo "    migrate-down      - Rollback one migration from dev database"
-	@echo "    migrate-test-up   - Apply migrations to test database"
-	@echo "    migrate-test-down - Rollback one migration from test database"
+	@echo "═══════════════════════════════════════════════════════════════"
+	@echo "  Social API - Makefile Commands"
+	@echo "═══════════════════════════════════════════════════════════════"
 	@echo ""
-	@echo "  Database:"
-	@echo "    db-start          - Start development database"
-	@echo "    db-stop           - Stop development database"
-	@echo "    db-start-test     - Start test database"
-	@echo "    db-stop-test      - Stop test database"
-	@echo "    db-start-all      - Start all databases"
-	@echo "    db-seed           - Seed development database"
-	@echo "    db-flush          - Flush development database"
+	@echo "🚀 Quick Start:"
+	@echo "  make setup          - First-time setup (Docker + DB + seed)"
+	@echo "  make docker-up      - Start all Docker services"
+	@echo "  make dev            - Run API with hot reload"
+	@echo "  make docker-down    - Stop all Docker services"
 	@echo ""
-	@echo "  Testing:"
-	@echo "    test-setup        - Setup test database (run once)"
-	@echo "    test              - Run all tests"
-	@echo "    test-unit         - Run unit tests only"
-	@echo "    test-integration  - Run integration tests only"
-	@echo "    test-coverage     - Run tests with coverage report"
+	@echo "🐳 Docker:"
+	@echo "  make docker-up      - Start all services (DB, Redis, Web)"
+	@echo "  make docker-down    - Stop all services"
+	@echo "  make docker-restart - Restart all services"
+	@echo "  make docker-logs    - View all service logs"
+	@echo "  make docker-ps      - List running containers"
 	@echo ""
-	@echo "  Development:"
-	@echo "    dev               - Run API (air) and Vite UI together"
-	@echo "    web               - Run Vite UI only (./web)"
+	@echo "💾 Database:"
+	@echo "  make db-start       - Start development database"
+	@echo "  make db-stop        - Stop development database"
+	@echo "  make db-seed        - Seed database with test data"
+	@echo "  make db-flush       - Remove all data from database"
+	@echo "  make db-reset       - Flush + migrate + seed"
+	@echo "  make db-reset-hard  - Drop all tables + migrate + seed"
 	@echo ""
-	@echo "  Swagger:"
-	@echo "    swagger           - Generate Swagger documentation"
+	@echo "🔄 Migrations:"
+	@echo "  make migration      - Create new migration file"
+	@echo "  make migrate-up     - Apply all pending migrations"
 	@echo ""
+	@echo "🧪 Testing:"
+	@echo "  make test-setup     - Setup test database (run once)"
+	@echo "  make test           - Run all tests"
+	@echo "  make test-unit      - Run unit tests only"
+	@echo "  make test-integration - Run integration tests only"
+	@echo "  make test-coverage  - Generate coverage report"
+	@echo ""
+	@echo "💻 Development:"
+	@echo "  make dev            - Run API with hot reload (air)"
+	@echo "  make run            - Run API without hot reload"
+	@echo ""
+	@echo "🌐 Web UI (Activation):"
+	@echo "  make web-up         - Start web UI (http://localhost:5173)"
+	@echo "  make web-down       - Stop web UI"
+	@echo "  make web-logs       - View web UI logs"
+	@echo "  make web-rebuild    - Rebuild web UI container"
+	@echo ""
+	@echo "📚 Documentation:"
+	@echo "  make swagger        - Generate Swagger docs"
+	@echo ""
+	@echo "═══════════════════════════════════════════════════════════════"
 %:
 	@: 
 # This is for avoiding errors

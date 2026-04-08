@@ -42,3 +42,17 @@ func GetDuration(key string, fallback time.Duration) time.Duration {
 
 	return valueAsDuration
 }
+
+func GetBool(key string, fallback bool) bool {
+	value, exists := os.LookupEnv(key)
+	if !exists {
+		return fallback
+	}
+
+	valueAsBool, err := strconv.ParseBool(value)
+	if err != nil {
+		return fallback
+	}
+
+	return valueAsBool
+}

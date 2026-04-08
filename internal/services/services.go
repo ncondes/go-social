@@ -2,7 +2,9 @@ package services
 
 import (
 	"github.com/ncondes/go/social/internal/auth"
+	"github.com/ncondes/go/social/internal/cache"
 	"github.com/ncondes/go/social/internal/config"
+	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/logging"
 	"github.com/ncondes/go/social/internal/mailer"
 	"github.com/ncondes/go/social/internal/repositories"
@@ -21,12 +23,19 @@ func New(
 	mailer mailer.Mailer,
 	logger logging.Logger,
 	authenticator *auth.JWTAuthenticator,
+	redisClient *cache.Storage,
 ) *Services {
+	var userStorage domain.UserStorageInterface
+	if redisClient != nil {
+		userStorage = redisClient.UserStorage
+	}
+
 	return &Services{
 		UserService: NewUserService(
 			repositories.UserRepository,
 			repositories.FollowerRepository,
 			repositories.RoleRepository,
+			userStorage,
 			config,
 			mailer,
 			logger,

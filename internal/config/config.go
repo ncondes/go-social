@@ -15,6 +15,7 @@ type Config struct {
 	MailConfig  MailConfig
 	FrontendURL string
 	Auth        AuthConfig
+	Redis       RedisConfig
 }
 
 type AuthConfig struct {
@@ -47,6 +48,13 @@ type MailConfig struct {
 	Exp       time.Duration
 }
 
+type RedisConfig struct {
+	Enabled  bool
+	Addr     string
+	Password string
+	DB       int
+}
+
 func Load() *Config {
 	return &Config{
 		Addr: fmt.Sprintf(":%s", env.GetString("PORT", "8080")),
@@ -75,6 +83,12 @@ func Load() *Config {
 				Audience: env.GetString("JWT_AUDIENCE", "social"),
 				Duration: env.GetDuration("JWT_DURATION", 24*time.Hour),
 			},
+		},
+		Redis: RedisConfig{
+			Enabled:  env.GetBool("REDIS_ENABLED", false),
+			Addr:     env.GetString("REDIS_ADDR", "localhost:6379"),
+			Password: env.GetString("REDIS_PASSWORD", ""),
+			DB:       env.GetInt("REDIS_DB", 0),
 		},
 	}
 }

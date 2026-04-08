@@ -62,6 +62,12 @@ type UserRepositoryInterface interface {
 	DeleteUser(ctx context.Context, userID int64) error
 }
 
+type UserStorageInterface interface {
+	Get(ctx context.Context, userID int64) (*User, error)
+	Set(ctx context.Context, userID int64, user *User) error
+	Delete(ctx context.Context, userID int64) error
+}
+
 type UserServiceInterface interface {
 	CreateUser(ctx context.Context, user *User) error
 	GetUser(ctx context.Context, id int64) (*User, error)
@@ -78,4 +84,5 @@ var (
 	ErrUserUsernameTaken  = errors.New("user username is already in use")
 	ErrNoUserUpdateFields = errors.New("no fields to update on user")
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrNilUser            = errors.New("user cannot be nil")
 )
