@@ -15,7 +15,9 @@ type User struct {
 	Username  string    `json:"username"`
 	Email     string    `json:"email"`
 	IsActive  bool      `json:"is_active"`
-	Password  string    `json:"-"` // When marshaling, don't include this field
+	Password  string    `json:"-"` // - When marshaling, don't include this field
+	RoleID    int64     `json:"-"` // - When marshaling, don't include this field
+	Role      Role      `json:"role"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -42,11 +44,6 @@ type UserUpdate struct {
 	IsActive  *bool
 }
 
-type UserWithInvitationToken struct {
-	User
-	Token string `json:"token"`
-}
-
 type RegisterUserInput struct {
 	FirstName        string `json:"first_name" validate:"required,min=1,max=255" example:"John"`
 	LastName         string `json:"last_name" validate:"required,min=1,max=255" example:"Doe"`
@@ -70,7 +67,7 @@ type UserServiceInterface interface {
 	GetUser(ctx context.Context, id int64) (*User, error)
 	FollowUser(ctx context.Context, userID int64, followerID int64) error
 	UnfollowUser(ctx context.Context, userID int64, followerID int64) error
-	RegisterUserWithInvitation(ctx context.Context, registerUserInput *RegisterUserInput) (*UserWithInvitationToken, error)
+	RegisterUserWithInvitation(ctx context.Context, registerUserInput *RegisterUserInput) (*User, string, error)
 	ActivateUser(ctx context.Context, token string) error
 	AuthenticateUser(ctx context.Context, email, password string) (string, error)
 }

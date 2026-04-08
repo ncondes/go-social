@@ -26,6 +26,7 @@ func New(
 		UserService: NewUserService(
 			repositories.UserRepository,
 			repositories.FollowerRepository,
+			repositories.RoleRepository,
 			config,
 			mailer,
 			logger,

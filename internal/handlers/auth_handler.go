@@ -29,11 +29,11 @@ func NewAuthHandler(userService domain.UserServiceInterface, validator *Validato
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		json
-//	@Param			body	body		domain.RegisterUserInput		true	"Register user input"
-//	@Success		201		{object}	domain.UserWithInvitationToken	"User registered successfully"
-//	@Failure		400		{object}	dtos.ErrorsResponseDTO			"Validation errors"
-//	@Failure		409		{object}	dtos.ErrorResponseDTO			"Conflict error"
-//	@Failure		500		{object}	dtos.ErrorResponseDTO			"Internal server error"
+//	@Param			body	body		domain.RegisterUserInput	true	"Register user input"
+//	@Success		201		{object}	dtos.RegisterResponseDTO	"User registered successfully"
+//	@Failure		400		{object}	dtos.ErrorsResponseDTO		"Validation errors"
+//	@Failure		409		{object}	dtos.ErrorResponseDTO		"Conflict error"
+//	@Failure		500		{object}	dtos.ErrorResponseDTO		"Internal server error"
 //	@Router			/auth/register [post]
 func (h *AuthHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	// Validate request body
@@ -58,13 +58,17 @@ func (h *AuthHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		InvitationMethod: registerUserInput.InvitationMethod,
 	}
 
-	userWithInvitationToken, err := h.userService.RegisterUserWithInvitation(r.Context(), registerUserInput)
+	user, token, err := h.userService.RegisterUserWithInvitation(r.Context(), registerUserInput)
 	if err != nil {
 		handleError(w, r, err, h.logger)
 		return
 	}
 
-	respondWithData(w, http.StatusCreated, userWithInvitationToken, h.logger)
+	response := &dtos.RegisterResponseDTO{
+		User:  user,
+		Token: token,
+	}
+	respondWithData(w, http.StatusCreated, response, h.logger)
 }
 
 // ActivateUser godoc
@@ -133,7 +137,8 @@ func (h *AuthHandler) GenerateToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := new(dtos.GenerateTokenResponseDTO).FromString(token)
-
+	response := &dtos.GenerateTokenResponseDTO{
+		AccessToken: token,
+	}
 	respondWithData(w, http.StatusCreated, response, h.logger)
 }

@@ -34,8 +34,9 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
+		authorizer := NewTestAuthorizer()
 
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -43,7 +44,17 @@ func TestPostHandler_CreatePost(t *testing.T) {
 			Tags:    []string{"test"},
 		}
 
+		user := &domain.User{
+			ID: 1,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
+
 		req := testutils.MakeJSONRequest(t, http.MethodPost, "/posts", createPostDTO)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
 		w := httptest.NewRecorder()
 
 		postHandler.CreatePost(w, req)
@@ -77,7 +88,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -85,7 +97,17 @@ func TestPostHandler_CreatePost(t *testing.T) {
 			Tags:    []string{},
 		}
 
+		user := &domain.User{
+			ID: 1,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
+
 		req := testutils.MakeJSONRequest(t, http.MethodPost, "/posts", createPostDTO)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
 		w := httptest.NewRecorder()
 
 		postHandler.CreatePost(w, req)
@@ -109,7 +131,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		mockPostService := &mockPostService{}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		req := httptest.NewRequest(http.MethodPost, "/posts", strings.NewReader("invalid json"))
 		req.Header.Set("Content-Type", "application/json")
@@ -126,7 +149,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		mockPostService := &mockPostService{}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		testCases := []struct {
 			name          string
@@ -206,7 +230,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -214,7 +239,17 @@ func TestPostHandler_CreatePost(t *testing.T) {
 			Tags:    []string{"go", "golang", "go", "backend", "golang"},
 		}
 
+		user := &domain.User{
+			ID: 1,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
+
 		req := testutils.MakeJSONRequest(t, http.MethodPost, "/posts", createPostDTO)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
 		w := httptest.NewRecorder()
 
 		postHandler.CreatePost(w, req)
@@ -233,7 +268,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -241,7 +277,17 @@ func TestPostHandler_CreatePost(t *testing.T) {
 			Tags:    []string{"test"},
 		}
 
+		user := &domain.User{
+			ID: 1,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
+
 		req := testutils.MakeJSONRequest(t, http.MethodPost, "/posts", createPostDTO)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
 		w := httptest.NewRecorder()
 
 		postHandler.CreatePost(w, req)
@@ -267,7 +313,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -275,7 +322,17 @@ func TestPostHandler_CreatePost(t *testing.T) {
 			Tags:    []string{"test"},
 		}
 
+		user := &domain.User{
+			ID: 1,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
+
 		req := testutils.MakeJSONRequest(t, http.MethodPost, "/posts", createPostDTO)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
 		w := httptest.NewRecorder()
 
 		postHandler.CreatePost(w, req)
@@ -322,7 +379,8 @@ func TestPostHandler_GetPost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		req := testutils.MakeJSONRequest(t, http.MethodGet, "/posts/1", nil)
 		w := httptest.NewRecorder()
@@ -357,7 +415,8 @@ func TestPostHandler_GetPost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		req := testutils.MakeJSONRequest(t, http.MethodGet, "/posts/1", nil)
 		w := httptest.NewRecorder()
@@ -385,7 +444,8 @@ func TestPostHandler_GetPost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		req := testutils.MakeJSONRequest(t, http.MethodGet, "/posts/1", nil)
 		w := httptest.NewRecorder()
@@ -407,6 +467,220 @@ func TestPostHandler_GetPost(t *testing.T) {
 func TestPostHandler_UpdatePost(t *testing.T) {
 	t.Parallel()
 
+	t.Run("returns 200 when owner updates their own post", func(t *testing.T) {
+		t.Parallel()
+
+		title := "Updated Title"
+		version := int64(1)
+		userID := int64(1)
+
+		mockPostService := &mockPostService{
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return &domain.PostWithDetails{
+					Post: domain.Post{
+						ID:      postID,
+						UserID:  userID,
+						Version: version,
+					},
+				}, nil
+			},
+			updatePostFunc: func(ctx context.Context, post *domain.Post) error {
+				post.Version = version + 1
+				return nil
+			},
+		}
+
+		validator := NewValidator()
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+
+		user := &domain.User{
+			ID: userID,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
+
+		updatePostDTO := dtos.UpdatePostDTO{
+			Title:   &title,
+			Version: &version,
+		}
+
+		req := testutils.MakeJSONRequest(t, http.MethodPatch, "/posts/1", updatePostDTO)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
+		w := httptest.NewRecorder()
+
+		postHandler.UpdatePost(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("returns 200 when moderator updates any post", func(t *testing.T) {
+		t.Parallel()
+
+		title := "Updated Title"
+		version := int64(1)
+		postOwnerID := int64(2)
+		moderatorID := int64(1)
+
+		mockPostService := &mockPostService{
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return &domain.PostWithDetails{
+					Post: domain.Post{
+						ID:      postID,
+						UserID:  postOwnerID,
+						Version: version,
+					},
+				}, nil
+			},
+			updatePostFunc: func(ctx context.Context, post *domain.Post) error {
+				post.Version = version + 1
+				return nil
+			},
+		}
+
+		validator := NewValidator()
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+
+		moderator := &domain.User{
+			ID: moderatorID,
+			Role: domain.Role{
+				ID:    2,
+				Name:  "moderator",
+				Level: domain.RoleLevelModerator,
+			},
+		}
+
+		updatePostDTO := dtos.UpdatePostDTO{
+			Title:   &title,
+			Version: &version,
+		}
+
+		req := testutils.MakeJSONRequest(t, http.MethodPatch, "/posts/1", updatePostDTO)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, moderator))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
+		w := httptest.NewRecorder()
+
+		postHandler.UpdatePost(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("returns 200 when admin updates any post", func(t *testing.T) {
+		t.Parallel()
+
+		title := "Updated Title"
+		version := int64(1)
+		postOwnerID := int64(2)
+		adminID := int64(1)
+
+		mockPostService := &mockPostService{
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return &domain.PostWithDetails{
+					Post: domain.Post{
+						ID:      postID,
+						UserID:  postOwnerID,
+						Version: version,
+					},
+				}, nil
+			},
+			updatePostFunc: func(ctx context.Context, post *domain.Post) error {
+				post.Version = version + 1
+				return nil
+			},
+		}
+
+		validator := NewValidator()
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+
+		admin := &domain.User{
+			ID: adminID,
+			Role: domain.Role{
+				ID:    3,
+				Name:  "admin",
+				Level: domain.RoleLevelAdmin,
+			},
+		}
+
+		updatePostDTO := dtos.UpdatePostDTO{
+			Title:   &title,
+			Version: &version,
+		}
+
+		req := testutils.MakeJSONRequest(t, http.MethodPatch, "/posts/1", updatePostDTO)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, admin))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
+		w := httptest.NewRecorder()
+
+		postHandler.UpdatePost(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("returns 403 when user tries to update another user's post", func(t *testing.T) {
+		t.Parallel()
+
+		title := "Updated Title"
+		version := int64(1)
+		postOwnerID := int64(2)
+		userID := int64(1)
+
+		mockPostService := &mockPostService{
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return &domain.PostWithDetails{
+					Post: domain.Post{
+						ID:      postID,
+						UserID:  postOwnerID,
+						Version: version,
+					},
+				}, nil
+			},
+		}
+
+		validator := NewValidator()
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+
+		user := &domain.User{
+			ID: userID,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
+
+		updatePostDTO := dtos.UpdatePostDTO{
+			Title:   &title,
+			Version: &version,
+		}
+
+		req := testutils.MakeJSONRequest(t, http.MethodPatch, "/posts/1", updatePostDTO)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
+		w := httptest.NewRecorder()
+
+		postHandler.UpdatePost(w, req)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
+
+		var response struct {
+			Error string `json:"error"`
+		}
+
+		testutils.ParseJSONResponse(t, w, &response)
+		assert.Equal(t, "insufficient permissions", response.Error)
+	})
+}
+
+func TestPostHandler_UpdatePost_Validation(t *testing.T) {
+	t.Parallel()
+
 	t.Run("returns 200 with updated post when update succeeds", func(t *testing.T) {
 		t.Parallel()
 
@@ -426,7 +700,8 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		updatePostDTO := dtos.UpdatePostDTO{
 			Title:   &title,
@@ -435,7 +710,28 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 			Version: &version,
 		}
 
+		user := &domain.User{
+			ID: 1,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
+
+		mockPostService.getPostFunc = func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+			return &domain.PostWithDetails{
+				Post: domain.Post{
+					ID:      postID,
+					UserID:  user.ID,
+					Version: version,
+				},
+			}, nil
+		}
+
 		req := testutils.MakeJSONRequest(t, http.MethodPatch, "/posts/1", updatePostDTO)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
 		w := httptest.NewRecorder()
 
 		postHandler.UpdatePost(w, req)
@@ -461,7 +757,8 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 		mockPostService := &mockPostService{}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		req := httptest.NewRequest(http.MethodPatch, "/posts/1", strings.NewReader("invalid json"))
 		req.Header.Set("Content-Type", "application/json")
@@ -478,7 +775,8 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 		mockPostService := &mockPostService{}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		updatePostDTO := dtos.UpdatePostDTO{}
 
@@ -501,10 +799,30 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 	t.Run("returns 400 when validation fails", func(t *testing.T) {
 		t.Parallel()
 
-		mockPostService := &mockPostService{}
+		user := &domain.User{
+			ID: 1,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
+
+		mockPostService := &mockPostService{
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return &domain.PostWithDetails{
+					Post: domain.Post{
+						ID:      postID,
+						UserID:  user.ID,
+						Version: 1,
+					},
+				}, nil
+			},
+		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		testCases := []struct {
 			name          string
@@ -574,6 +892,8 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 				t.Parallel()
 
 				req := testutils.MakeJSONRequest(t, http.MethodPatch, "/posts/1", tc.payload)
+				req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
+				req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
 				w := httptest.NewRecorder()
 
 				postHandler.UpdatePost(w, req)
@@ -594,14 +914,24 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 	t.Run("returns 404 when post is not found", func(t *testing.T) {
 		t.Parallel()
 
+		user := &domain.User{
+			ID: 1,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
+
 		mockPostService := &mockPostService{
-			updatePostFunc: func(ctx context.Context, post *domain.Post) error {
-				return domain.ErrPostNotFound
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return nil, domain.ErrPostNotFound
 			},
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		req := testutils.MakeJSONRequest(t, http.MethodPatch, "/posts/1", dtos.UpdatePostDTO{
 			Title: func() *string {
@@ -613,6 +943,8 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 				return &v
 			}(),
 		})
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
 		w := httptest.NewRecorder()
 
 		postHandler.UpdatePost(w, req)
@@ -631,14 +963,33 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 	t.Run("returns 500 when internal error occurs", func(t *testing.T) {
 		t.Parallel()
 
+		user := &domain.User{
+			ID: 1,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
+
 		mockPostService := &mockPostService{
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return &domain.PostWithDetails{
+					Post: domain.Post{
+						ID:      postID,
+						UserID:  user.ID,
+						Version: 1,
+					},
+				}, nil
+			},
 			updatePostFunc: func(ctx context.Context, post *domain.Post) error {
 				return errors.New("database connection error")
 			},
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
 
 		title := "test"
 		version := int64(1)
@@ -646,6 +997,8 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 			Title:   &title,
 			Version: &version,
 		})
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
 		w := httptest.NewRecorder()
 
 		postHandler.UpdatePost(w, req)
@@ -665,19 +1018,222 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 func TestPostHandler_DeletePost(t *testing.T) {
 	t.Parallel()
 
-	t.Run("returns 204 when post is deleted successfully", func(t *testing.T) {
+	t.Run("returns 204 when owner deletes their own post", func(t *testing.T) {
 		t.Parallel()
 
+		userID := int64(1)
+
 		mockPostService := &mockPostService{
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return &domain.PostWithDetails{
+					Post: domain.Post{
+						ID:     postID,
+						UserID: userID,
+					},
+				}, nil
+			},
 			deletePostFunc: func(ctx context.Context, postID int64) error {
 				return nil
 			},
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+
+		user := &domain.User{
+			ID: userID,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
 
 		req := testutils.MakeJSONRequest(t, http.MethodDelete, "/posts/1", nil)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
+		w := httptest.NewRecorder()
+
+		postHandler.DeletePost(w, req)
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
+	})
+
+	t.Run("returns 204 when admin deletes any post", func(t *testing.T) {
+		t.Parallel()
+
+		postOwnerID := int64(2)
+		adminID := int64(1)
+
+		mockPostService := &mockPostService{
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return &domain.PostWithDetails{
+					Post: domain.Post{
+						ID:     postID,
+						UserID: postOwnerID,
+					},
+				}, nil
+			},
+			deletePostFunc: func(ctx context.Context, postID int64) error {
+				return nil
+			},
+		}
+
+		validator := NewValidator()
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+
+		admin := &domain.User{
+			ID: adminID,
+			Role: domain.Role{
+				ID:    3,
+				Name:  "admin",
+				Level: domain.RoleLevelAdmin,
+			},
+		}
+
+		req := testutils.MakeJSONRequest(t, http.MethodDelete, "/posts/1", nil)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, admin))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
+		w := httptest.NewRecorder()
+
+		postHandler.DeletePost(w, req)
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
+	})
+
+	t.Run("returns 403 when moderator tries to delete a post", func(t *testing.T) {
+		t.Parallel()
+
+		postOwnerID := int64(2)
+		moderatorID := int64(1)
+
+		mockPostService := &mockPostService{
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return &domain.PostWithDetails{
+					Post: domain.Post{
+						ID:     postID,
+						UserID: postOwnerID,
+					},
+				}, nil
+			},
+		}
+
+		validator := NewValidator()
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+
+		moderator := &domain.User{
+			ID: moderatorID,
+			Role: domain.Role{
+				ID:    2,
+				Name:  "moderator",
+				Level: domain.RoleLevelModerator,
+			},
+		}
+
+		req := testutils.MakeJSONRequest(t, http.MethodDelete, "/posts/1", nil)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, moderator))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
+		w := httptest.NewRecorder()
+
+		postHandler.DeletePost(w, req)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
+
+		var response struct {
+			Error string `json:"error"`
+		}
+
+		testutils.ParseJSONResponse(t, w, &response)
+		assert.Equal(t, "insufficient permissions", response.Error)
+	})
+
+	t.Run("returns 403 when user tries to delete another user's post", func(t *testing.T) {
+		t.Parallel()
+
+		postOwnerID := int64(2)
+		userID := int64(1)
+
+		mockPostService := &mockPostService{
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return &domain.PostWithDetails{
+					Post: domain.Post{
+						ID:     postID,
+						UserID: postOwnerID,
+					},
+				}, nil
+			},
+		}
+
+		validator := NewValidator()
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+
+		user := &domain.User{
+			ID: userID,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
+
+		req := testutils.MakeJSONRequest(t, http.MethodDelete, "/posts/1", nil)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
+		w := httptest.NewRecorder()
+
+		postHandler.DeletePost(w, req)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
+
+		var response struct {
+			Error string `json:"error"`
+		}
+
+		testutils.ParseJSONResponse(t, w, &response)
+		assert.Equal(t, "insufficient permissions", response.Error)
+	})
+}
+
+func TestPostHandler_DeletePost_ErrorCases(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns 204 when post is deleted successfully", func(t *testing.T) {
+		t.Parallel()
+
+		mockPostService := &mockPostService{
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return &domain.PostWithDetails{
+					Post: domain.Post{
+						ID:     postID,
+						UserID: 1,
+					},
+				}, nil
+			},
+			deletePostFunc: func(ctx context.Context, postID int64) error {
+				return nil
+			},
+		}
+
+		validator := NewValidator()
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+
+		user := &domain.User{
+			ID: 1,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
+
+		req := testutils.MakeJSONRequest(t, http.MethodDelete, "/posts/1", nil)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
 		w := httptest.NewRecorder()
 
 		postHandler.DeletePost(w, req)
@@ -689,15 +1245,27 @@ func TestPostHandler_DeletePost(t *testing.T) {
 		t.Parallel()
 
 		mockPostService := &mockPostService{
-			deletePostFunc: func(ctx context.Context, postID int64) error {
-				return domain.ErrPostNotFound
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return nil, domain.ErrPostNotFound
 			},
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+
+		user := &domain.User{
+			ID: 1,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
 
 		req := testutils.MakeJSONRequest(t, http.MethodDelete, "/posts/1", nil)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
 		w := httptest.NewRecorder()
 
 		postHandler.DeletePost(w, req)
@@ -717,15 +1285,35 @@ func TestPostHandler_DeletePost(t *testing.T) {
 		t.Parallel()
 
 		mockPostService := &mockPostService{
+			getPostFunc: func(ctx context.Context, postID int64) (*domain.PostWithDetails, error) {
+				return &domain.PostWithDetails{
+					Post: domain.Post{
+						ID:     postID,
+						UserID: 1,
+					},
+				}, nil
+			},
 			deletePostFunc: func(ctx context.Context, postID int64) error {
 				return errors.New("database connection error")
 			},
 		}
 
 		validator := NewValidator()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger)
+		authorizer := NewTestAuthorizer()
+		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+
+		user := &domain.User{
+			ID: 1,
+			Role: domain.Role{
+				ID:    1,
+				Name:  "user",
+				Level: domain.RoleLevelUser,
+			},
+		}
 
 		req := testutils.MakeJSONRequest(t, http.MethodDelete, "/posts/1", nil)
+		req = req.WithContext(context.WithValue(req.Context(), authenticatedUserContextKey, user))
+		req = req.WithContext(context.WithValue(req.Context(), postIDContextKey, int64(1)))
 		w := httptest.NewRecorder()
 
 		postHandler.DeletePost(w, req)

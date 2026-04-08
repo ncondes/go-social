@@ -37,5 +37,5 @@ func main() {
 	repositories := repositories.New(db, config)
 
 	dbPkg.Flush(db)
-	dbPkg.Seed(repositories)
+	dbPkg.Seed(repositories, db)
 }

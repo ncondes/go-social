@@ -100,6 +100,7 @@ func (app *application) mount() *chi.Mux {
 				r.Use(handlers.PostIDMiddleware(app.logger))
 
 				r.Get("/", app.handlers.PostHandler.GetPost)
+
 				r.Patch("/", app.handlers.PostHandler.UpdatePost)
 				r.Delete("/", app.handlers.PostHandler.DeletePost)
 

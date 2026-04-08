@@ -26,9 +26,16 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *domain.User) erro
 	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
 	defer cancel()
 
-	query := `INSERT INTO users (first_name, last_name, username, email, password)
-	VALUES ($1, $2, $3, $4, $5)
-	RETURNING id, created_at, updated_at`
+	query := `INSERT INTO users (
+		first_name,
+		last_name,
+		username,
+		email,
+		password,
+		role_id
+	)
+	VALUES ($1, $2, $3, $4, $5, $6)
+	RETURNING id, created_at, updated_at, role_id`
 
 	err := r.db.QueryRowContext(
 		ctx,
@@ -38,10 +45,12 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *domain.User) erro
 		user.Username,
 		user.Email,
 		user.Password,
+		user.RoleID,
 	).Scan(
 		&user.ID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.RoleID,
 	)
 	if err != nil {
 		return handleDBError(err, resourceUser)
@@ -55,16 +64,21 @@ func (r *UserRepository) GetUser(ctx context.Context, id int64) (*domain.User, e
 	defer cancel()
 
 	query := `SELECT
-		id,
-		first_name,
-		last_name,
-		username,
-		email,
-		password,
-		is_active,
-		created_at,
-		updated_at
-	FROM users
+		u.id,
+		u.first_name,
+		u.last_name,
+		u.username,
+		u.email,
+		u.password,
+		u.is_active,
+		u.created_at,
+		u.updated_at,
+		r.id,
+		r.name,
+		r.description,
+		r.level
+	FROM users u
+	INNER JOIN roles r ON u.role_id = r.id
 	WHERE id = $1 AND is_active = true`
 
 	user := &domain.User{}
@@ -78,6 +92,10 @@ func (r *UserRepository) GetUser(ctx context.Context, id int64) (*domain.User, e
 		&user.IsActive,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.Role.ID,
+		&user.Role.Name,
+		&user.Role.Description,
+		&user.Role.Level,
 	)
 	if err != nil {
 		return nil, handleDBError(err, resourceUser)
@@ -91,16 +109,21 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*dom
 	defer cancel()
 
 	query := `SELECT
-		id,
-		first_name,
-		last_name,
-		username,
-		email,
-		password,
-		is_active,
-		created_at,
-		updated_at
-	FROM users
+		u.id,
+		u.first_name,
+		u.last_name,
+		u.username,
+		u.email,
+		u.password,
+		u.is_active,
+		u.created_at,
+		u.updated_at,
+		r.id,
+		r.name,
+		r.description,
+		r.level
+	FROM users u
+	INNER JOIN roles r ON u.role_id = r.id
 	WHERE email = $1 AND is_active = true`
 
 	user := &domain.User{}
@@ -114,6 +137,10 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*dom
 		&user.IsActive,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.Role.ID,
+		&user.Role.Name,
+		&user.Role.Description,
+		&user.Role.Level,
 	)
 	if err != nil {
 		return nil, handleDBError(err, resourceUser)
@@ -210,9 +237,31 @@ func (r *UserRepository) createUserWithTx(ctx context.Context, tx *sql.Tx, user 
 	ctx, cancel := context.WithTimeout(ctx, queryTimeoutDuration)
 	defer cancel()
 
-	query := `INSERT INTO users (first_name, last_name, username, email, password)
-	VALUES ($1, $2, $3, $4, $5)
-	RETURNING id, created_at, updated_at`
+	query := `
+		WITH inserted_user AS (
+			INSERT INTO users (
+				first_name,
+				last_name,
+				username,
+				email,
+				password,
+				role_id
+			)
+			VALUES ($1, $2, $3, $4, $5, $6)
+			RETURNING id, created_at, updated_at, role_id
+		)
+		SELECT 
+			u.id,
+			u.created_at,
+			u.updated_at,
+			u.role_id,
+			r.id,
+			r.name,
+			r.description,
+			r.level
+		FROM inserted_user u
+		INNER JOIN roles r ON u.role_id = r.id
+	`
 
 	err := tx.QueryRowContext(
 		ctx,
@@ -222,10 +271,16 @@ func (r *UserRepository) createUserWithTx(ctx context.Context, tx *sql.Tx, user 
 		user.Username,
 		user.Email,
 		user.Password,
+		user.RoleID,
 	).Scan(
 		&user.ID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.RoleID,
+		&user.Role.ID,
+		&user.Role.Name,
+		&user.Role.Description,
+		&user.Role.Level,
 	)
 	if err != nil {
 		return handleDBError(err, resourceUser)
@@ -236,6 +291,9 @@ func (r *UserRepository) createUserWithTx(ctx context.Context, tx *sql.Tx, user 
 
 // TODO: we need to consider
 // TODO: create a cron-job to clean up expired invitations
+// TODO: do we ?
+// TODO: yes, users that does not accept the user invitation will
+// TODO: left the row in the db, so a clean up would be needed
 func (r *UserRepository) createUserInvitationWithTx(
 	ctx context.Context,
 	tx *sql.Tx,

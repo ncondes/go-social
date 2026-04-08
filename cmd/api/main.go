@@ -60,7 +60,8 @@ func main() {
 	authenticator := auth.NewJWTAuthenticator(config.Auth.JWT.Secret, config.Auth.JWT.Audience, config.Auth.JWT.Issuer, config.Auth.JWT.Duration)
 	services := services.New(repositories, config, mailer, logger, authenticator)
 	validator := handlers.NewValidator()
-	handlers := handlers.New(config, services, validator, logger)
+	authorizer := auth.NewAuthorizer()
+	handlers := handlers.New(config, services, validator, logger, authorizer)
 
 	app := &application{
 		config:        config,

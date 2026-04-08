@@ -13,6 +13,7 @@ import (
 )
 
 const testPassword = "Qwerty123$"
+const userRoleName = "user"
 
 func Flush(db *sql.DB) {
 	ctx := context.Background()
@@ -31,10 +32,10 @@ func Flush(db *sql.DB) {
 	}
 }
 
-func Seed(r *repositories.Repositories) {
+func Seed(r *repositories.Repositories, db *sql.DB) {
 	ctx := context.Background()
 
-	users := generateUsers(usersAmount)
+	users := generateUsers(usersAmount, db)
 	for _, user := range users {
 		err := r.UserRepository.CreateUser(ctx, user)
 		if err != nil {
@@ -67,8 +68,16 @@ func Seed(r *repositories.Repositories) {
 	}
 }
 
-func generateUsers(amount int) []*domain.User {
+func generateUsers(amount int, db *sql.DB) []*domain.User {
 	users := make([]*domain.User, amount)
+	// get role id by name
+	var roleID int64
+
+	err := db.QueryRow("SELECT id FROM roles WHERE name = $1", userRoleName).Scan(&roleID)
+	if err != nil {
+		log.Printf("Error getting role: %v\n", err)
+		return users
+	}
 
 	for i := 0; i < amount; i++ {
 		firstName := seedFirstNames[rand.Intn(len(seedFirstNames))]
@@ -81,6 +90,7 @@ func generateUsers(amount int) []*domain.User {
 			LastName:  lastName,
 			Username:  username,
 			Email:     email,
+			RoleID:    roleID,
 		}
 
 		if err := user.HashPassword(testPassword); err != nil {

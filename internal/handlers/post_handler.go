@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/ncondes/go/social/internal/auth"
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/dtos"
 	"github.com/ncondes/go/social/internal/logging"
@@ -12,13 +13,20 @@ type PostHandler struct {
 	postService domain.PostServiceInterface
 	validator   *Validator
 	logger      logging.Logger
+	authorizer  *auth.Authorizer
 }
 
-func NewPostHandler(postService domain.PostServiceInterface, validator *Validator, logger logging.Logger) *PostHandler {
+func NewPostHandler(
+	postService domain.PostServiceInterface,
+	validator *Validator,
+	logger logging.Logger,
+	authorizer *auth.Authorizer,
+) *PostHandler {
 	return &PostHandler{
 		postService: postService,
 		validator:   validator,
 		logger:      logger,
+		authorizer:  authorizer,
 	}
 }
 
@@ -32,7 +40,9 @@ func NewPostHandler(postService domain.PostServiceInterface, validator *Validato
 //	@Param			post	body		dtos.CreatePostDTO	true	"Post data"
 //	@Success		201		{object}	domain.Post
 //	@Failure		400		{object}	dtos.ErrorsResponseDTO	"Validation errors"
+//	@Failure		401		{object}	dtos.ErrorResponseDTO	"Unauthorized"
 //	@Failure		500		{object}	dtos.ErrorResponseDTO	"Internal server error"
+//	@Security		BearerAuth
 //	@Router			/posts [post]
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	var createPostDTO *dtos.CreatePostDTO
@@ -73,8 +83,10 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			postID	path		int64	true	"Post ID"
 //	@Success		200		{object}	dtos.PostResponseDTO
+//	@Failure		401		{object}	dtos.ErrorResponseDTO	"Unauthorized"
 //	@Failure		404		{object}	dtos.ErrorResponseDTO	"Post not found"
 //	@Failure		500		{object}	dtos.ErrorResponseDTO	"Internal server error"
+//	@Security		BearerAuth
 //	@Router			/posts/{postID} [get]
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	postID := getPostIDFromContext(r.Context())
@@ -101,11 +113,15 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 //	@Param			post	body		dtos.UpdatePostDTO	true	"Fields to update"
 //	@Success		200		{object}	domain.Post
 //	@Failure		400		{object}	dtos.ErrorsResponseDTO	"Validation errors"
+//	@Failure		401		{object}	dtos.ErrorResponseDTO	"Unauthorized"
+//	@Failure		403		{object}	dtos.ErrorResponseDTO	"Insufficient permissions"
 //	@Failure		404		{object}	dtos.ErrorResponseDTO	"Post not found"
 //	@Failure		409		{object}	dtos.ErrorResponseDTO	"Post version conflict"
 //	@Failure		500		{object}	dtos.ErrorResponseDTO	"Internal server error"
+//	@Security		BearerAuth
 //	@Router			/posts/{postID} [patch]
 func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
+	user := getAuthenticatedUserFromContext(r.Context())
 	postID := getPostIDFromContext(r.Context())
 
 	var updatePostDTO *dtos.UpdatePostDTO
@@ -123,6 +139,17 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.validator.validateStruct(updatePostDTO); err != nil {
 		respondWithErrors(w, http.StatusBadRequest, err, h.logger)
+		return
+	}
+
+	existingPost, err := h.postService.GetPost(r.Context(), postID)
+	if err != nil {
+		handleError(w, r, err, h.logger)
+		return
+	}
+
+	if !h.authorizer.CanUpdatePost(user, &existingPost.Post) {
+		respondWithError(w, http.StatusForbidden, "insufficient permissions", h.logger)
 		return
 	}
 
@@ -160,11 +187,26 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			postID	path	int64	true	"Post ID"
 //	@Success		204		"No content"
+//	@Failure		401		{object}	dtos.ErrorResponseDTO	"Unauthorized"
+//	@Failure		403		{object}	dtos.ErrorResponseDTO	"Insufficient permissions"
 //	@Failure		404		{object}	dtos.ErrorResponseDTO	"Post not found"
 //	@Failure		500		{object}	dtos.ErrorResponseDTO	"Internal server error"
+//	@Security		BearerAuth
 //	@Router			/posts/{postID} [delete]
 func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
+	user := getAuthenticatedUserFromContext(r.Context())
 	postID := getPostIDFromContext(r.Context())
+
+	existingPost, err := h.postService.GetPost(r.Context(), postID)
+	if err != nil {
+		handleError(w, r, err, h.logger)
+		return
+	}
+
+	if !h.authorizer.CanDeletePost(user, &existingPost.Post) {
+		respondWithError(w, http.StatusForbidden, "insufficient permissions", h.logger)
+		return
+	}
 
 	if err := h.postService.DeletePost(r.Context(), postID); err != nil {
 		handleError(w, r, err, h.logger)

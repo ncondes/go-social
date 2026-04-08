@@ -1,5 +1,7 @@
 package dtos
 
+import "github.com/ncondes/go/social/internal/domain"
+
 type ActivateUserDTO struct {
 	Token string `json:"token" validate:"required" example:"2fa66d86-ec2b-4766-ae19-bdcd24045d82"`
 }
@@ -13,7 +15,7 @@ type GenerateTokenResponseDTO struct {
 	AccessToken string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"`
 }
 
-func (dto *GenerateTokenResponseDTO) FromString(token string) *GenerateTokenResponseDTO {
-	dto.AccessToken = token
-	return dto
+type RegisterResponseDTO struct {
+	User  *domain.User `json:"user"`
+	Token string       `json:"token" example:"2fa66d86-ec2b-4766-ae19-bdcd24045d82"`
 }

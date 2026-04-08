@@ -21,6 +21,7 @@ const (
 	resourceUser           resourceType = "user"
 	resourceComment        resourceType = "comment"
 	resourceUserInvitation resourceType = "user_invitation"
+	resourceRole           resourceType = "role"
 )
 
 func handleDBError(err error, resource resourceType) error {
@@ -33,6 +34,8 @@ func handleDBError(err error, resource resourceType) error {
 			return domain.ErrUserNotFound
 		case resourceComment:
 			return domain.ErrCommentNotFound
+		case resourceRole:
+			return domain.ErrRoleNotFound
 		default:
 			return err
 		}

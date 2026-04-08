@@ -18,6 +18,7 @@ import (
 type UserService struct {
 	userRepository     domain.UserRepositoryInterface
 	followerRepository domain.FollowerRepositoryInterface
+	roleRepository     domain.RoleRepositoryInterface
 	config             *config.Config
 	mailer             mailer.Mailer
 	logger             logging.Logger
@@ -27,6 +28,7 @@ type UserService struct {
 func NewUserService(
 	userRepository domain.UserRepositoryInterface,
 	followerRepository domain.FollowerRepositoryInterface,
+	roleRepository domain.RoleRepositoryInterface,
 	config *config.Config,
 	mailer mailer.Mailer,
 	logger logging.Logger,
@@ -35,6 +37,7 @@ func NewUserService(
 	return &UserService{
 		userRepository:     userRepository,
 		followerRepository: followerRepository,
+		roleRepository:     roleRepository,
 		config:             config,
 		mailer:             mailer,
 		logger:             logger,
@@ -58,16 +61,22 @@ func (s *UserService) UnfollowUser(ctx context.Context, userID int64, followerID
 	return s.followerRepository.UnfollowUser(ctx, userID, followerID)
 }
 
-func (s *UserService) RegisterUserWithInvitation(ctx context.Context, registerUserInput *domain.RegisterUserInput) (*domain.UserWithInvitationToken, error) {
+func (s *UserService) RegisterUserWithInvitation(ctx context.Context, registerUserInput *domain.RegisterUserInput) (*domain.User, string, error) {
+	defaultRole, err := s.roleRepository.GetByName(ctx, "user")
+	if err != nil {
+		return nil, "", err
+	}
+
 	user := domain.User{
 		FirstName: registerUserInput.FirstName,
 		LastName:  registerUserInput.LastName,
 		Username:  registerUserInput.Username,
 		Email:     registerUserInput.Email,
+		RoleID:    defaultRole.ID,
 	}
 	// Hash the user's password
 	if err := user.HashPassword(registerUserInput.Password); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	// Generate a random token and hash it
 	plainToken := uuid.New().String()
@@ -77,7 +86,7 @@ func (s *UserService) RegisterUserWithInvitation(ctx context.Context, registerUs
 
 	// Execute transaction
 	if err := s.userRepository.CreateUserAndInvitation(ctx, &user, registerUserInput.InvitationMethod, hashToken); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	isSandbox := s.config.Env != "production"
@@ -104,13 +113,10 @@ func (s *UserService) RegisterUserWithInvitation(ctx context.Context, registerUs
 			s.logger.Errorw("Failed to delete user after email sending failed", "error", err)
 		}
 
-		return nil, err
+		return nil, "", err
 	}
 
-	return &domain.UserWithInvitationToken{
-		User:  user,
-		Token: plainToken,
-	}, nil
+	return &user, plainToken, nil
 }
 
 func (s *UserService) ActivateUser(ctx context.Context, token string) error {

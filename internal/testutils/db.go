@@ -53,12 +53,19 @@ func CreateTestUser(t *testing.T, db *sql.DB) int64 {
 	username := fmt.Sprintf("testuser_%d", timestamp)
 	email := fmt.Sprintf("testuser_%d@example.com", timestamp)
 
+	// Get the default "user" role ID
+	var roleID int64
+	err := db.QueryRow(`SELECT id FROM roles WHERE name = 'user' LIMIT 1`).Scan(&roleID)
+	if err != nil {
+		t.Fatalf("failed to get user role: %v", err)
+	}
+
 	var userID int64
-	err := db.QueryRow(`
-        INSERT INTO users (first_name, last_name, username, email, password)
-        VALUES ($1, $2, $3, $4, $5)
+	err = db.QueryRow(`
+        INSERT INTO users (first_name, last_name, username, email, password, role_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id`,
-		"Test", "User", username, email, "hashedpassword",
+		"Test", "User", username, email, "hashedpassword", roleID,
 	).Scan(&userID)
 
 	if err != nil {

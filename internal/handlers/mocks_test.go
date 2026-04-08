@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 
+	"github.com/ncondes/go/social/internal/auth"
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/logging"
 )
@@ -70,3 +71,7 @@ func (l *noopLogger) Fatalw(msg string, keysAndValues ...any) {}
 func (l *noopLogger) Sync() error                             { return nil }
 
 var testLogger logging.Logger = &noopLogger{}
+
+func NewTestAuthorizer() *auth.Authorizer {
+	return auth.NewAuthorizer()
+}

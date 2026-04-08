@@ -17,6 +17,10 @@ type Post struct {
 	UpdatedAt time.Time `json:"updated_at" example:"2026-04-03T10:00:00Z"`
 }
 
+func (p *Post) GetOwnerID() any {
+	return p.UserID
+}
+
 type PostWithDetails struct {
 	Post
 	Author       User

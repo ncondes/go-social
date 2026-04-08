@@ -19,6 +19,7 @@ type Repositories struct {
 	CommentRepository  domain.CommentRepositoryInterface
 	FollowerRepository domain.FollowerRepositoryInterface
 	FeedRepository     domain.FeedRepositoryInterface
+	RoleRepository     domain.RoleRepositoryInterface
 }
 
 func New(db *sql.DB, config *config.Config) *Repositories {
@@ -28,6 +29,7 @@ func New(db *sql.DB, config *config.Config) *Repositories {
 		CommentRepository:  NewCommentRepository(db),
 		FollowerRepository: NewFollowerRepository(db),
 		FeedRepository:     NewFeedRepository(db),
+		RoleRepository:     NewRoleRepository(db),
 	}
 }
 
