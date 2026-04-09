@@ -1,0 +1,11 @@
+.git
+.env
+.vscode
+docs/
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+coverage.out
+coverage-integration.out
