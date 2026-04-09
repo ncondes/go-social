@@ -6,7 +6,6 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/ncondes/go/social/internal/config"
-	"github.com/ncondes/go/social/internal/db"
 	dbPkg "github.com/ncondes/go/social/internal/db"
 )
 
@@ -18,7 +17,7 @@ func main() {
 
 	config := config.Load()
 
-	db, err := db.New(
+	db, err := dbPkg.New(
 		config.DB.Addr,
 		config.DB.MaxOpenConns,
 		config.DB.MaxIdleConns,
