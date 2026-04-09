@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/ncondes/go-social/compare/v1.0.0...v1.1.0) (2026-04-09)
+
+
+### Features
+
+* add automated api version update workflow from changelog ([3734e84](https://github.com/ncondes/go-social/commit/3734e84c48c36987b0ec84158037fa0aa82c6e5d))
+
+
+### Bug Fixes
+
+* use go.mod for go version in ci workflows ([1f6789e](https://github.com/ncondes/go-social/commit/1f6789e8a933ffb56382397dff809765ecd6ccc8))
+
 ## 1.0.0 (2026-04-09)
 
 
