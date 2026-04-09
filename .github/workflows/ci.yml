@@ -81,6 +81,18 @@ jobs:
           go-version: '1.23'
           cache: true
 
+      - name: Install swag
+        run: go install github.com/swaggo/swag/cmd/swag@latest
+
+      - name: Generate docs
+        run: swag init -g main.go -d ./cmd/api/,./internal/handlers,./internal/dtos,./internal/domain -o ./docs
+
+      - name: Install migrate
+        run: go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+      - name: Run migrations
+        run: migrate -path cmd/db/migrations -database "postgres://postgres:password@localhost:5433/social_test?sslmode=disable" up
+
       - name: Run integration tests
         run: go test -race -v -tags integration ./...
         env:

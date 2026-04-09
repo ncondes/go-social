@@ -1,0 +1,24 @@
+name: release-please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          # This assummes that you have created a personal access token
+          # with write permissions to your repository
+          # and configured it as a secret named RELEASE_PLEASE_GITHUB_TOKEN
+          token: ${{ secrets.RELEASE_PLEASE_GITHUB_TOKEN }}
+          # This is a built-in strategy in release-please, see "Action Inputs" section for more options
+          release-type: simple
+          
