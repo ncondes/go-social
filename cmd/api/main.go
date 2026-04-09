@@ -2,12 +2,13 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/joho/godotenv"
 	"github.com/ncondes/go/social/internal/auth"
 	"github.com/ncondes/go/social/internal/cache"
-	"github.com/ncondes/go/social/internal/config"
+	cfg "github.com/ncondes/go/social/internal/config"
 	"github.com/ncondes/go/social/internal/db"
 	"github.com/ncondes/go/social/internal/handlers"
 	"github.com/ncondes/go/social/internal/logging"
@@ -42,7 +43,7 @@ func main() {
 		logger.Fatalw("Error loading .env file", "error", err)
 	}
 
-	config := config.Load()
+	config := cfg.Load()
 
 	db, err := db.New(
 		config.DB.Addr,
@@ -72,6 +73,19 @@ func main() {
 	}
 
 	cacheStorage := cache.NewCacheStorage(rc)
+
+	rateLimiters := newRateLimiters(rc, config.RateLimit)
+
+	if config.RateLimit.Enabled {
+		logger.Infow("Rate limiters initialized",
+			"global", fmt.Sprintf("%d/%s", config.RateLimit.Global.RequestsPerWindow, config.RateLimit.Global.Window),
+			"strict_ip", fmt.Sprintf("%d/%s", config.RateLimit.StrictIP.RequestsPerWindow, config.RateLimit.StrictIP.Window),
+			"read_ops", fmt.Sprintf("%d/%s", config.RateLimit.ReadOps.RequestsPerWindow, config.RateLimit.ReadOps.Window),
+			"write_ops", fmt.Sprintf("%d/%s", config.RateLimit.WriteOps.RequestsPerWindow, config.RateLimit.WriteOps.Window),
+		)
+	} else {
+		logger.Infow("Rate limiters disabled")
+	}
 
 	repositories := repositories.New(db, config)
 	mailer := mailer.NewSendGridMailer(config.MailConfig.FromEmail, config.MailConfig.APIKey)
@@ -104,6 +118,7 @@ func main() {
 		logger:        logger,
 		services:      services,
 		authenticator: authenticator,
+		rateLimiters:  rateLimiters,
 	}
 
 	mux := app.mount()

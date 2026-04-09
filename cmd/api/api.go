@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -23,6 +27,7 @@ type application struct {
 	logger        logging.Logger
 	authenticator *auth.JWTAuthenticator
 	services      *services.Services
+	rateLimiters  *RateLimiters
 }
 
 func (app *application) mount() *chi.Mux {
@@ -36,7 +41,9 @@ func (app *application) mount() *chi.Mux {
 	// Set a timeout value on the request context (ctx), that will signal
 	// through ctx.Done() that the request has timed out and further
 	// processing should be stopped.
-	r.Use(middleware.Timeout(60 * time.Second))
+	r.Use(middleware.Timeout(30 * time.Second))
+	// Global rate limit - protect server from total overload
+	r.Use(handlers.RateLimitMiddleware(app.rateLimiters.Global, app.logger))
 
 	r.Use(cors.Handler(cors.Options{
 		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
@@ -50,25 +57,34 @@ func (app *application) mount() *chi.Mux {
 	}))
 
 	r.Route("/v1", func(r chi.Router) {
-		r.With(handlers.BasicAuthMiddleware(app.logger, app.config)).Get("/health", app.handlers.HealthHandler.Check)
+		// r.With(handlers.BasicAuthMiddleware(app.logger, app.config)).Get("/health", app.handlers.HealthHandler.Check)
+
+		r.Get("/health", app.handlers.HealthHandler.Check)
 
 		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.Addr)
 		r.Get("/swagger/*", httpSwagger.Handler(
 			httpSwagger.URL(docsURL),
 		))
 
-		r.Route("/auth", func(r chi.Router) {
-			r.Post("/register", app.handlers.AuthHandler.RegisterUser)
-			r.Put("/activate", app.handlers.AuthHandler.ActivateUser)
-			r.Post("/token", app.handlers.AuthHandler.GenerateToken)
+		// Auth routes - strict IP-based rate limiting
+		r.Group(func(r chi.Router) {
+			r.Use(handlers.RateLimitByIPMiddleware(app.rateLimiters.StrictIP, app.logger))
+
+			r.Route("/auth", func(r chi.Router) {
+				r.Post("/register", app.handlers.AuthHandler.RegisterUser)
+				r.Put("/activate", app.handlers.AuthHandler.ActivateUser)
+				r.Post("/token", app.handlers.AuthHandler.GenerateToken)
+			})
 		})
 
+		// Feed - read operations with generous limits
 		r.Route("/feed", func(r chi.Router) {
 			r.Use(handlers.AuthTokenMiddleware(
 				app.authenticator,
 				app.services.UserService,
 				app.logger,
 			))
+			r.Use(handlers.RateLimitByAuthenticatedUserMiddleware(app.rateLimiters.ReadOps, app.logger))
 			r.Get("/", app.handlers.FeedHandler.GetUserFeed)
 		})
 
@@ -82,9 +98,12 @@ func (app *application) mount() *chi.Mux {
 				))
 				r.Use(handlers.UserIDMiddleware(app.logger))
 
-				r.Get("/", app.handlers.UserHandler.GetUser)
-				r.Post("/follow", app.handlers.UserHandler.FollowUser)
-				r.Delete("/unfollow", app.handlers.UserHandler.UnfollowUser)
+				// Read operations
+				r.With(handlers.RateLimitByAuthenticatedUserMiddleware(app.rateLimiters.ReadOps, app.logger)).Get("/", app.handlers.UserHandler.GetUser)
+
+				// Write operations
+				r.With(handlers.RateLimitByAuthenticatedUserMiddleware(app.rateLimiters.WriteOps, app.logger)).Post("/follow", app.handlers.UserHandler.FollowUser)
+				r.With(handlers.RateLimitByAuthenticatedUserMiddleware(app.rateLimiters.WriteOps, app.logger)).Delete("/unfollow", app.handlers.UserHandler.UnfollowUser)
 			})
 		})
 
@@ -94,19 +113,25 @@ func (app *application) mount() *chi.Mux {
 				app.services.UserService,
 				app.logger,
 			))
-			r.Post("/", app.handlers.PostHandler.CreatePost)
+
+			// Create post - write operations
+			r.With(handlers.RateLimitByAuthenticatedUserMiddleware(app.rateLimiters.WriteOps, app.logger)).Post("/", app.handlers.PostHandler.CreatePost)
 
 			r.Route("/{postID}", func(r chi.Router) {
 				r.Use(handlers.PostIDMiddleware(app.logger))
 
-				r.Get("/", app.handlers.PostHandler.GetPost)
+				// Read operations
+				r.With(handlers.RateLimitByAuthenticatedUserMiddleware(app.rateLimiters.ReadOps, app.logger)).Get("/", app.handlers.PostHandler.GetPost)
 
-				r.Patch("/", app.handlers.PostHandler.UpdatePost)
-				r.Delete("/", app.handlers.PostHandler.DeletePost)
+				// Write operations
+				r.With(handlers.RateLimitByAuthenticatedUserMiddleware(app.rateLimiters.WriteOps, app.logger)).Patch("/", app.handlers.PostHandler.UpdatePost)
+				r.With(handlers.RateLimitByAuthenticatedUserMiddleware(app.rateLimiters.WriteOps, app.logger)).Delete("/", app.handlers.PostHandler.DeletePost)
 
 				r.Route("/comments", func(r chi.Router) {
-					r.Post("/", app.handlers.CommentHandler.CreateComment)
-					r.Get("/", app.handlers.CommentHandler.GetCommentsByPostID)
+					// Write operations
+					r.With(handlers.RateLimitByAuthenticatedUserMiddleware(app.rateLimiters.WriteOps, app.logger)).Post("/", app.handlers.CommentHandler.CreateComment)
+					// Read operations
+					r.With(handlers.RateLimitByAuthenticatedUserMiddleware(app.rateLimiters.ReadOps, app.logger)).Get("/", app.handlers.CommentHandler.GetCommentsByPostID)
 				})
 			})
 		})
@@ -129,7 +154,45 @@ func (app *application) run(mux *chi.Mux) error {
 		IdleTimeout:  1 * time.Minute,
 	}
 
-	app.logger.Infow("Starting server", "addr", app.config.Addr)
+	// Channel to listen for OS interrupt signals
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	return srv.ListenAndServe()
+	// Channel to receive server errors
+	serverErrors := make(chan error, 1)
+
+	// Start server in a goroutine so we can listen for shutdown signals concurrently
+	go func() {
+		app.logger.Infow("Starting server", "addr", app.config.Addr)
+		serverErrors <- srv.ListenAndServe()
+	}()
+
+	// Block until we receive an interrupt signal or server error
+	select {
+	case err := <-serverErrors:
+		// Server failed to start or encountered an error
+		if err != nil {
+			return fmt.Errorf("server error: %w", err)
+		}
+
+	case sig := <-quit:
+		// Received shutdown signal (Ctrl+C or kill command)
+		app.logger.Infow("Shutting down server...", "signal", sig.String())
+
+		// Create context with 5-second timeout for graceful shutdown
+		// This gives in-flight requests time to complete
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		// Attempt graceful shutdown
+		if err := srv.Shutdown(ctx); err != nil {
+			// If graceful shutdown fails, force close the server
+			srv.Close()
+			return fmt.Errorf("server shutdown failed: %w", err)
+		}
+
+		app.logger.Infow("Server stopped gracefully")
+	}
+
+	return nil
 }

@@ -16,6 +16,7 @@ type Config struct {
 	FrontendURL string
 	Auth        AuthConfig
 	Redis       RedisConfig
+	RateLimit   RateLimitConfig
 }
 
 type AuthConfig struct {
@@ -55,6 +56,23 @@ type RedisConfig struct {
 	DB       int
 }
 
+type RateLimitTier struct {
+	RequestsPerWindow int
+	Window            time.Duration
+}
+
+type RateLimitConfig struct {
+	Enabled bool
+	// Server protection
+	Global RateLimitTier
+	// IP-based (anonymous users)
+	StrictIP   RateLimitTier
+	ModerateIP RateLimitTier
+	// Operation-based (authenticated users)
+	ReadOps  RateLimitTier
+	WriteOps RateLimitTier
+}
+
 func Load() *Config {
 	return &Config{
 		Addr: fmt.Sprintf(":%s", env.GetString("PORT", "8080")),
@@ -84,11 +102,43 @@ func Load() *Config {
 				Duration: env.GetDuration("JWT_DURATION", 24*time.Hour),
 			},
 		},
+
 		Redis: RedisConfig{
 			Enabled:  env.GetBool("REDIS_ENABLED", false),
 			Addr:     env.GetString("REDIS_ADDR", "localhost:6379"),
 			Password: env.GetString("REDIS_PASSWORD", ""),
 			DB:       env.GetInt("REDIS_DB", 0),
+		},
+
+		RateLimit: RateLimitConfig{
+			Enabled: env.GetBool("RATE_LIMIT_ENABLED", true),
+
+			Global: RateLimitTier{
+				RequestsPerWindow: env.GetInt("RATE_LIMIT_GLOBAL_REQUESTS", 10000),
+				Window:            env.GetDuration("RATE_LIMIT_GLOBAL_WINDOW", 1*time.Minute),
+			},
+
+			StrictIP: RateLimitTier{
+				RequestsPerWindow: env.GetInt("RATE_LIMIT_STRICT_IP_REQUESTS", 5),
+				Window:            env.GetDuration("RATE_LIMIT_STRICT_IP_WINDOW", 1*time.Hour),
+			},
+
+			ModerateIP: RateLimitTier{
+				RequestsPerWindow: env.GetInt("RATE_LIMIT_MODERATE_IP_REQUESTS", 100),
+				Window:            env.GetDuration("RATE_LIMIT_MODERATE_IP_WINDOW", 1*time.Minute),
+			},
+
+			// Read operations - GET requests (generous)
+			ReadOps: RateLimitTier{
+				RequestsPerWindow: env.GetInt("RATE_LIMIT_READ_REQUESTS", 300),
+				Window:            env.GetDuration("RATE_LIMIT_READ_WINDOW", 1*time.Minute),
+			},
+
+			// Write operations - POST/PUT/PATCH/DELETE (moderate)
+			WriteOps: RateLimitTier{
+				RequestsPerWindow: env.GetInt("RATE_LIMIT_WRITE_REQUESTS", 30),
+				Window:            env.GetDuration("RATE_LIMIT_WRITE_WINDOW", 1*time.Minute),
+			},
 		},
 	}
 }

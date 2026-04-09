@@ -12,6 +12,7 @@ import (
 	"github.com/ncondes/go/social/internal/config"
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/logging"
+	"github.com/ncondes/go/social/internal/ratelimit"
 )
 
 func PostIDMiddleware(logger logging.Logger) func(next http.Handler) http.Handler {
@@ -134,4 +135,112 @@ func AuthTokenMiddleware(
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+// Global rate limit (all requests)
+func RateLimitMiddleware(rl ratelimit.RateLimiter, logger logging.Logger) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if rl == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			if !checkRateLimit(r.Context(), w, rl, "global", logger) {
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// Per-IP rate limit (separate limit per IP address)
+func RateLimitByIPMiddleware(rl ratelimit.RateLimiter, logger logging.Logger) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if rl == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			ip := getClientIP(r)
+			key := "ip:" + ip
+
+			if !checkRateLimit(r.Context(), w, rl, key, logger) {
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// Per-user rate limit (for authenticated routes)
+func RateLimitByAuthenticatedUserMiddleware(rl ratelimit.RateLimiter, logger logging.Logger) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if rl == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			user := getAuthenticatedUserFromContext(r.Context())
+			key := "user:" + strconv.FormatInt(user.ID, 10)
+
+			if !checkRateLimit(r.Context(), w, rl, key, logger) {
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func getClientIP(r *http.Request) string {
+	// Chi's middleware.RealIP has already processed X-Forwarded-For and X-Real-IP headers
+	// and set r.RemoteAddr to the real client IP. We just need to strip the port.
+	ip := r.RemoteAddr
+	if host, _, found := strings.Cut(ip, ":"); found {
+		return host
+	}
+	return ip
+}
+
+func checkRateLimit(
+	ctx context.Context,
+	w http.ResponseWriter,
+	rl ratelimit.RateLimiter,
+	key string,
+	logger logging.Logger,
+) bool {
+	allowed, info, err := rl.Allow(ctx, key)
+
+	// Fail closed - block request if rate limiter fails
+	if err != nil {
+		logger.Errorw("rate limit check failed",
+			"error", err,
+			"key", key,
+		)
+		respondWithError(w, http.StatusServiceUnavailable, "service temporarily unavailable", logger)
+		return false
+	}
+
+	// Set rate limit headers
+	w.Header().Set("X-RateLimit-Limit", strconv.Itoa(info.Limit))
+	w.Header().Set("X-RateLimit-Remaining", strconv.Itoa(info.Remaining))
+	w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(info.Reset.Unix(), 10))
+
+	if !allowed {
+		w.Header().Set("Retry-After", strconv.FormatInt(info.Reset.Unix(), 10))
+		logger.Warnw("rate limit exceeded",
+			"key", key,
+			"remaining", info.Remaining,
+			"reset", info.Reset,
+		)
+		respondWithError(w, http.StatusTooManyRequests, "rate limit exceeded", logger)
+		return false
+	}
+
+	return true
 }
