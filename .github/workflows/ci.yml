@@ -6,11 +6,15 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel any in-progress run on the same branch when a new push is made.
+# Avoids wasting CI minutes on outdated commits.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # Runs static analysis, linting, and unit tests.
+  # Does not require a database — fast feedback on every push and PR.
   unit:
     runs-on: ubuntu-22.04
     timeout-minutes: 10
@@ -53,6 +57,9 @@ jobs:
       - name: Run unit tests
         run: go test -race -v ./...
 
+  # Runs integration tests against a real PostgreSQL instance.
+  # Only runs after the unit job passes to avoid wasting resources.
+  # Tests are gated by the `integration` build tag — see //go:build integration.
   integration:
     needs: unit
     runs-on: ubuntu-22.04
@@ -87,6 +94,7 @@ jobs:
       - name: Generate docs
         run: swag init -g main.go -d ./cmd/api/,./internal/handlers,./internal/dtos,./internal/domain -o ./docs
 
+      # Apply all migrations so the test DB schema matches what the tests expect.
       - name: Install migrate
         run: go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 

@@ -1,4 +1,4 @@
-name: release-please
+name: Release
 
 on:
   push:
@@ -10,15 +10,42 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Creates or updates the release PR. When the PR is merged, it tags the release.
   release:
     runs-on: ubuntu-22.04
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - name: Run release-please
+        uses: googleapis/release-please-action@v4
+        id: release
         with:
-          # This assummes that you have created a personal access token
-          # with write permissions to your repository
-          # and configured it as a secret named RELEASE_PLEASE_GITHUB_TOKEN
+          # Requires a personal access token with write permissions
+          # configured as a secret named RELEASE_PLEASE_GITHUB_TOKEN
           token: ${{ secrets.RELEASE_PLEASE_GITHUB_TOKEN }}
-          # This is a built-in strategy in release-please, see "Action Inputs" section for more options
           release-type: simple
-          
+
+  # Syncs the version constant in main.go with the released tag.
+  # Only runs when release-please actually creates a release (not on every push).
+  update-version:
+    needs: release
+    if: ${{ needs.release.outputs.release_created == 'true' }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update version constant in main.go
+        run: |
+          VERSION=${{ needs.release.outputs.tag_name }}
+          VERSION=${VERSION#v}
+          sed -i "s/version = \"[^\"]*\"/version = \"$VERSION\"/" cmd/api/main.go
+
+      - name: Commit and push version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add cmd/api/main.go
+          git commit -m "chore: update API version to ${{ needs.release.outputs.tag_name }}" || { echo "No changes to commit"; exit 0; }
+          git push
