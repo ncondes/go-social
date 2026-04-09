@@ -32,6 +32,12 @@ jobs:
           go mod tidy
           git diff --exit-code go.mod go.sum
 
+      - name: Install swag
+        run: go install github.com/swaggo/swag/cmd/swag@latest
+
+      - name: Generate docs
+        run: swag init -g main.go -d ./cmd/api/,./internal/handlers,./internal/dtos,./internal/domain -o ./docs
+
       - name: Build
         run: go build -v ./...
 
