@@ -6,23 +6,32 @@ import (
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/dtos"
 	"github.com/ncondes/go/social/internal/logging"
+	"github.com/ncondes/go/social/internal/metrics"
 )
 
 type CommentHandler struct {
 	commentService domain.CommentServiceInterface
 	validator      *Validator
 	logger         logging.Logger
+	metrics        *metrics.Metrics
 }
 
-func NewCommentHandler(commentService domain.CommentServiceInterface, validator *Validator, logger logging.Logger) *CommentHandler {
+func NewCommentHandler(
+	commentService domain.CommentServiceInterface,
+	validator *Validator,
+	logger logging.Logger,
+	metrics *metrics.Metrics,
+) *CommentHandler {
 	return &CommentHandler{
 		commentService: commentService,
 		validator:      validator,
 		logger:         logger,
+		metrics:        metrics,
 	}
 }
 
 func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
+	user := getAuthenticatedUserFromContext(r.Context())
 	postID := getPostIDFromContext(r.Context())
 
 	var createCommentDTO *dtos.CreateCommentDTO
@@ -39,7 +48,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 
 	comment := domain.Comment{
 		Content: createCommentDTO.Content,
-		UserID:  1, // TODO: get user ID from auth middleware in the future
+		UserID:  user.ID,
 		PostID:  postID,
 	}
 
@@ -47,6 +56,8 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, err, h.logger)
 		return
 	}
+
+	h.metrics.CommentsCreated.Add(1)
 
 	respondWithData(w, http.StatusCreated, comment, h.logger)
 }

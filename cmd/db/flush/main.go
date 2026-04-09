@@ -16,7 +16,6 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	// TODO: create seed load config function
 	config := config.Load()
 
 	db, err := db.New(

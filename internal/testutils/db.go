@@ -45,7 +45,6 @@ func TruncateTables(t *testing.T, db *sql.DB, tables ...string) {
 	}
 }
 
-// TODO: temporal user creation
 func CreateTestUser(t *testing.T, db *sql.DB) int64 {
 	t.Helper() // Marks the function as a helper function
 

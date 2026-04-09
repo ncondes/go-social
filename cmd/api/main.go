@@ -13,6 +13,7 @@ import (
 	"github.com/ncondes/go/social/internal/handlers"
 	"github.com/ncondes/go/social/internal/logging"
 	"github.com/ncondes/go/social/internal/mailer"
+	"github.com/ncondes/go/social/internal/metrics"
 	"github.com/ncondes/go/social/internal/repositories"
 	"github.com/ncondes/go/social/internal/services"
 	"github.com/redis/go-redis/v9"
@@ -105,11 +106,14 @@ func main() {
 	)
 	validator := handlers.NewValidator()
 	authorizer := auth.NewAuthorizer()
+	metrics := metrics.New()
+	metrics.RegisterDatabaseMetrics(db)
 	handlers := handlers.New(config,
 		services,
 		validator,
 		logger,
 		authorizer,
+		metrics,
 	)
 
 	app := &application{
@@ -119,6 +123,7 @@ func main() {
 		services:      services,
 		authenticator: authenticator,
 		rateLimiters:  rateLimiters,
+		metrics:       metrics,
 	}
 
 	mux := app.mount()

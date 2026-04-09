@@ -11,8 +11,15 @@ import (
 
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/dtos"
+	"github.com/ncondes/go/social/internal/metrics"
 	"github.com/ncondes/go/social/internal/testutils"
 	"github.com/stretchr/testify/assert"
+)
+
+var (
+	testMetrics    = metrics.New()
+	testValidator  = NewValidator()
+	testAuthorizer = NewTestAuthorizer()
 )
 
 func TestPostHandler_CreatePost(t *testing.T) {
@@ -33,10 +40,13 @@ func TestPostHandler_CreatePost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -87,9 +97,13 @@ func TestPostHandler_CreatePost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -130,9 +144,13 @@ func TestPostHandler_CreatePost(t *testing.T) {
 
 		mockPostService := &mockPostService{}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		req := httptest.NewRequest(http.MethodPost, "/posts", strings.NewReader("invalid json"))
 		req.Header.Set("Content-Type", "application/json")
@@ -148,9 +166,13 @@ func TestPostHandler_CreatePost(t *testing.T) {
 
 		mockPostService := &mockPostService{}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		testCases := []struct {
 			name          string
@@ -229,9 +251,13 @@ func TestPostHandler_CreatePost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -267,9 +293,13 @@ func TestPostHandler_CreatePost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -312,9 +342,13 @@ func TestPostHandler_CreatePost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		createPostDTO := dtos.CreatePostDTO{
 			Title:   "Test Post",
@@ -378,9 +412,13 @@ func TestPostHandler_GetPost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		req := testutils.MakeJSONRequest(t, http.MethodGet, "/posts/1", nil)
 		w := httptest.NewRecorder()
@@ -414,9 +452,13 @@ func TestPostHandler_GetPost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		req := testutils.MakeJSONRequest(t, http.MethodGet, "/posts/1", nil)
 		w := httptest.NewRecorder()
@@ -443,9 +485,13 @@ func TestPostHandler_GetPost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		req := testutils.MakeJSONRequest(t, http.MethodGet, "/posts/1", nil)
 		w := httptest.NewRecorder()
@@ -490,9 +536,13 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		user := &domain.User{
 			ID: userID,
@@ -542,9 +592,13 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		moderator := &domain.User{
 			ID: moderatorID,
@@ -594,9 +648,13 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		admin := &domain.User{
 			ID: adminID,
@@ -642,9 +700,13 @@ func TestPostHandler_UpdatePost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		user := &domain.User{
 			ID: userID,
@@ -699,9 +761,13 @@ func TestPostHandler_UpdatePost_Validation(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		updatePostDTO := dtos.UpdatePostDTO{
 			Title:   &title,
@@ -756,9 +822,13 @@ func TestPostHandler_UpdatePost_Validation(t *testing.T) {
 
 		mockPostService := &mockPostService{}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		req := httptest.NewRequest(http.MethodPatch, "/posts/1", strings.NewReader("invalid json"))
 		req.Header.Set("Content-Type", "application/json")
@@ -774,9 +844,13 @@ func TestPostHandler_UpdatePost_Validation(t *testing.T) {
 
 		mockPostService := &mockPostService{}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		updatePostDTO := dtos.UpdatePostDTO{}
 
@@ -820,9 +894,13 @@ func TestPostHandler_UpdatePost_Validation(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		testCases := []struct {
 			name          string
@@ -929,9 +1007,13 @@ func TestPostHandler_UpdatePost_Validation(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		req := testutils.MakeJSONRequest(t, http.MethodPatch, "/posts/1", dtos.UpdatePostDTO{
 			Title: func() *string {
@@ -987,9 +1069,13 @@ func TestPostHandler_UpdatePost_Validation(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		title := "test"
 		version := int64(1)
@@ -1037,9 +1123,13 @@ func TestPostHandler_DeletePost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		user := &domain.User{
 			ID: userID,
@@ -1080,9 +1170,13 @@ func TestPostHandler_DeletePost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		admin := &domain.User{
 			ID: adminID,
@@ -1120,9 +1214,13 @@ func TestPostHandler_DeletePost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		moderator := &domain.User{
 			ID: moderatorID,
@@ -1167,9 +1265,13 @@ func TestPostHandler_DeletePost(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		user := &domain.User{
 			ID: userID,
@@ -1218,9 +1320,13 @@ func TestPostHandler_DeletePost_ErrorCases(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		user := &domain.User{
 			ID: 1,
@@ -1250,9 +1356,13 @@ func TestPostHandler_DeletePost_ErrorCases(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		user := &domain.User{
 			ID: 1,
@@ -1298,9 +1408,13 @@ func TestPostHandler_DeletePost_ErrorCases(t *testing.T) {
 			},
 		}
 
-		validator := NewValidator()
-		authorizer := NewTestAuthorizer()
-		postHandler := NewPostHandler(mockPostService, validator, testLogger, authorizer)
+		postHandler := NewPostHandler(
+			mockPostService,
+			testValidator,
+			testLogger,
+			testAuthorizer,
+			testMetrics,
+		)
 
 		user := &domain.User{
 			ID: 1,

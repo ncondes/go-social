@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"expvar"
 	"fmt"
 	"net/http"
 	"os"
@@ -17,6 +18,7 @@ import (
 	"github.com/ncondes/go/social/internal/config"
 	"github.com/ncondes/go/social/internal/handlers"
 	"github.com/ncondes/go/social/internal/logging"
+	"github.com/ncondes/go/social/internal/metrics"
 	"github.com/ncondes/go/social/internal/services"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -28,6 +30,7 @@ type application struct {
 	authenticator *auth.JWTAuthenticator
 	services      *services.Services
 	rateLimiters  *RateLimiters
+	metrics       *metrics.Metrics
 }
 
 func (app *application) mount() *chi.Mux {
@@ -44,11 +47,13 @@ func (app *application) mount() *chi.Mux {
 	r.Use(middleware.Timeout(30 * time.Second))
 	// Global rate limit - protect server from total overload
 	r.Use(handlers.RateLimitMiddleware(app.rateLimiters.Global, app.logger))
+	// Metrics middleware
+	r.Use(handlers.MetricsMiddleware(app.metrics))
 
 	r.Use(cors.Handler(cors.Options{
-		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-		AllowedOrigins: []string{"https://*", "http://*"},
-		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
+		// Configure allowed origins for production (use env var)
+		// Current config is meant to be used for local development
+		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -60,6 +65,7 @@ func (app *application) mount() *chi.Mux {
 		// r.With(handlers.BasicAuthMiddleware(app.logger, app.config)).Get("/health", app.handlers.HealthHandler.Check)
 
 		r.Get("/health", app.handlers.HealthHandler.Check)
+		r.Get("/metrics", expvar.Handler().ServeHTTP)
 
 		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.Addr)
 		r.Get("/swagger/*", httpSwagger.Handler(

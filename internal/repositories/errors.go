@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/lib/pq"
 	"github.com/ncondes/go/social/internal/domain"
@@ -22,6 +21,7 @@ const (
 	resourceComment        resourceType = "comment"
 	resourceUserInvitation resourceType = "user_invitation"
 	resourceRole           resourceType = "role"
+	resourceFeed           resourceType = "feed"
 )
 
 func handleDBError(err error, resource resourceType) error {
@@ -45,13 +45,6 @@ func handleDBError(err error, resource resourceType) error {
 	if !ok {
 		return err
 	}
-
-	// TODO: remove at some point (this is for debugging purposes)
-	fmt.Println("[DEBUG] pqErr", pqErr)
-	fmt.Println("[DEBUG] pqErr.Code", pqErr.Code)
-	fmt.Println("[DEBUG] pqErr.Constraint", pqErr.Constraint)
-	fmt.Println("[DEBUG] pqErr.Detail", pqErr.Detail)
-	fmt.Println("[DEBUG] pqErr.Table", pqErr.Table)
 
 	switch pqErr.Code {
 	case foreignKeyViolation:

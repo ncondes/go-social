@@ -23,8 +23,6 @@ func (s *PostService) GetPost(ctx context.Context, postID int64) (*domain.PostWi
 }
 
 func (s *PostService) UpdatePost(ctx context.Context, post *domain.Post) error {
-	// TODO: should we validate the post before updating?
-	// TODO: maybe caching the post and getting the values from it
 	return s.postRepository.Update(ctx, post)
 }
 

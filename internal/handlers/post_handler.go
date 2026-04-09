@@ -7,6 +7,7 @@ import (
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/dtos"
 	"github.com/ncondes/go/social/internal/logging"
+	"github.com/ncondes/go/social/internal/metrics"
 )
 
 type PostHandler struct {
@@ -14,6 +15,7 @@ type PostHandler struct {
 	validator   *Validator
 	logger      logging.Logger
 	authorizer  *auth.Authorizer
+	metrics     *metrics.Metrics
 }
 
 func NewPostHandler(
@@ -21,12 +23,14 @@ func NewPostHandler(
 	validator *Validator,
 	logger logging.Logger,
 	authorizer *auth.Authorizer,
+	metrics *metrics.Metrics,
 ) *PostHandler {
 	return &PostHandler{
 		postService: postService,
 		validator:   validator,
 		logger:      logger,
 		authorizer:  authorizer,
+		metrics:     metrics,
 	}
 }
 
@@ -70,6 +74,8 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, err, h.logger)
 		return
 	}
+
+	h.metrics.PostsCreated.Add(1)
 
 	respondWithData(w, http.StatusCreated, post, h.logger)
 }
@@ -131,7 +137,6 @@ func (h *PostHandler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: should we make this shared? as a util
 	if updatePostDTO.Title == nil && updatePostDTO.Content == nil && updatePostDTO.Tags == nil {
 		respondWithError(w, http.StatusBadRequest, "no fields to update", h.logger)
 		return

@@ -6,19 +6,27 @@ import (
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/dtos"
 	"github.com/ncondes/go/social/internal/logging"
+	"github.com/ncondes/go/social/internal/metrics"
 )
 
 type AuthHandler struct {
 	userService domain.UserServiceInterface
 	validator   *Validator
 	logger      logging.Logger
+	metrics     *metrics.Metrics
 }
 
-func NewAuthHandler(userService domain.UserServiceInterface, validator *Validator, logger logging.Logger) *AuthHandler {
+func NewAuthHandler(
+	userService domain.UserServiceInterface,
+	validator *Validator,
+	logger logging.Logger,
+	metrics *metrics.Metrics,
+) *AuthHandler {
 	return &AuthHandler{
 		userService: userService,
 		validator:   validator,
 		logger:      logger,
+		metrics:     metrics,
 	}
 }
 
@@ -63,6 +71,8 @@ func (h *AuthHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		handleError(w, r, err, h.logger)
 		return
 	}
+
+	h.metrics.UsersRegistered.Add(1)
 
 	response := &dtos.RegisterResponseDTO{
 		User:  user,

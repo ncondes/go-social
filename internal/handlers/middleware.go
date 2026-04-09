@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/ncondes/go/social/internal/auth"
 	"github.com/ncondes/go/social/internal/config"
 	"github.com/ncondes/go/social/internal/domain"
 	"github.com/ncondes/go/social/internal/logging"
+	"github.com/ncondes/go/social/internal/metrics"
 	"github.com/ncondes/go/social/internal/ratelimit"
 )
 
@@ -243,4 +245,65 @@ func checkRateLimit(
 	}
 
 	return true
+}
+
+// MetricsMiddleware tracks HTTP request metrics for monitoring and observability.
+// It measures request counts, errors, in-flight requests, and response times.
+//
+// How it works:
+// 1. Records the start time when a request arrives
+// 2. Increments total requests counter and in-flight requests counter
+// 3. Wraps the ResponseWriter to capture the HTTP status code
+// 4. Passes the request to the next handler in the chain
+// 5. After the request completes:
+//   - Decrements in-flight requests counter
+//   - Records response time for this endpoint
+//   - Increments error counter if status code >= 400
+func MetricsMiddleware(m *metrics.Metrics) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Record when the request started
+			start := time.Now()
+
+			// Track total requests received
+			m.TotalRequests.Add(1)
+
+			// Track how many requests are currently being processed
+			m.RequestsInFlight.Add(1)
+			// Ensure we decrement when this request finishes (even if it panics)
+			defer m.RequestsInFlight.Add(-1)
+
+			// Wrap the ResponseWriter so we can capture the status code
+			// Default to 200 OK if WriteHeader is never called
+			wrapped := &metricsResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
+			// Pass the request to the next handler
+			next.ServeHTTP(wrapped, r)
+
+			// Calculate how long the request took (in milliseconds)
+			duration := time.Since(start).Milliseconds()
+			// Record response time for this specific endpoint path
+			m.ResponseTimes.Add(r.URL.Path, duration)
+
+			// Count errors (4xx client errors and 5xx server errors)
+			if wrapped.statusCode >= 400 {
+				m.TotalErrors.Add(1)
+			}
+		})
+	}
+}
+
+// metricsResponseWriter wraps http.ResponseWriter to capture the HTTP status code.
+// This is necessary because the standard ResponseWriter doesn't expose the status code
+// after it's been written.
+type metricsResponseWriter struct {
+	http.ResponseWriter     // Embed the original ResponseWriter
+	statusCode          int // Store the status code when WriteHeader is called
+}
+
+// WriteHeader intercepts the status code before passing it to the underlying ResponseWriter.
+// This method is automatically called by http.Handler when writing the response.
+func (rw *metricsResponseWriter) WriteHeader(code int) {
+	rw.statusCode = code                // Capture the status code for metrics
+	rw.ResponseWriter.WriteHeader(code) // Pass it through to the real ResponseWriter
 }

@@ -289,10 +289,8 @@ func (r *UserRepository) createUserWithTx(ctx context.Context, tx *sql.Tx, user 
 	return nil
 }
 
-// TODO: we need to consider
 // TODO: create a cron-job to clean up expired invitations
-// TODO: do we ?
-// TODO: yes, users that does not accept the user invitation will
+// TODO: users that does not accept the user invitation will
 // TODO: left the row in the db, so a clean up would be needed
 func (r *UserRepository) createUserInvitationWithTx(
 	ctx context.Context,

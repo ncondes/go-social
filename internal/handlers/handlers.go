@@ -4,6 +4,7 @@ import (
 	"github.com/ncondes/go/social/internal/auth"
 	"github.com/ncondes/go/social/internal/config"
 	"github.com/ncondes/go/social/internal/logging"
+	"github.com/ncondes/go/social/internal/metrics"
 	"github.com/ncondes/go/social/internal/services"
 )
 
@@ -22,13 +23,14 @@ func New(
 	validator *Validator,
 	logger logging.Logger,
 	authorizer *auth.Authorizer,
+	metrics *metrics.Metrics,
 ) *Handlers {
 	return &Handlers{
 		HealthHandler:  NewHealthHandler(config, logger),
 		UserHandler:    NewUserHandler(services.UserService, logger),
-		PostHandler:    NewPostHandler(services.PostService, validator, logger, authorizer),
-		CommentHandler: NewCommentHandler(services.CommentService, validator, logger),
+		PostHandler:    NewPostHandler(services.PostService, validator, logger, authorizer, metrics),
+		CommentHandler: NewCommentHandler(services.CommentService, validator, logger, metrics),
 		FeedHandler:    NewFeedHandler(services.FeedService, logger),
-		AuthHandler:    NewAuthHandler(services.UserService, validator, logger),
+		AuthHandler:    NewAuthHandler(services.UserService, validator, logger, metrics),
 	}
 }
