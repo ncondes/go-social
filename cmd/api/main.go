@@ -39,10 +39,7 @@ func main() {
 	logger := logging.NewZapLogger(zap.Must(zap.NewProduction()).Sugar())
 	defer logger.Sync()
 
-	err := godotenv.Load()
-	if err != nil {
-		logger.Fatalw("Error loading .env file", "error", err)
-	}
+	_ = godotenv.Load()
 
 	config := cfg.Load()
 
