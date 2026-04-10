@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.0](https://github.com/ncondes/go-social/compare/v1.1.0...v1.2.0) (2026-04-10)
+
+
+### Features
+
+* add dockerfile and dockerignore for cloud run deployment ([bd991ca](https://github.com/ncondes/go-social/commit/bd991caff14c36bf364993b4943b65e0e329e457))
+* add swagger documentation for user, comment, and feed endpoints ([7edd30c](https://github.com/ncondes/go-social/commit/7edd30c14580a46e7847dc55dc990b8321e40bc8))
+
+
+### Bug Fixes
+
+* add length check and use https scheme for swagger in production ([98ad7e4](https://github.com/ncondes/go-social/commit/98ad7e4d35629744551b8f89eff32bc1dca03487))
+* make .env file loading optional for cloud run deployment ([6a2e7d7](https://github.com/ncondes/go-social/commit/6a2e7d7a2f19b30b414a3ed212168827e4a45b56))
+
 ## [1.1.0](https://github.com/ncondes/go-social/compare/v1.0.0...v1.1.0) (2026-04-09)
 
 
