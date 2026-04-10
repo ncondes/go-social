@@ -30,6 +30,22 @@ func NewCommentHandler(
 	}
 }
 
+// CreateComment godoc
+//
+//	@Summary		Create a comment on a post
+//	@Description	Add a comment to a post by ID
+//	@Tags			comments
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int64					true	"Post ID"
+//	@Param			body	body		dtos.CreateCommentDTO	true	"Comment data"
+//	@Success		201		{object}	dtos.CommentResponseDTO
+//	@Failure		400		{object}	dtos.ErrorResponseDTO	"Bad request"
+//	@Failure		401		{object}	dtos.ErrorResponseDTO	"Unauthorized"
+//	@Failure		404		{object}	dtos.ErrorResponseDTO	"Post not found"
+//	@Failure		500		{object}	dtos.ErrorResponseDTO	"Internal server error"
+//	@Security		BearerAuth
+//	@Router			/posts/{postID}/comments [post]
 func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	user := getAuthenticatedUserFromContext(r.Context())
 	postID := getPostIDFromContext(r.Context())
@@ -62,6 +78,20 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	respondWithData(w, http.StatusCreated, comment, h.logger)
 }
 
+// GetCommentsByPostID godoc
+//
+//	@Summary		Get comments for a post
+//	@Description	Get all comments for a post by ID
+//	@Tags			comments
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		int64	true	"Post ID"
+//	@Success		200		{array}		dtos.CommentResponseDTO
+//	@Failure		401		{object}	dtos.ErrorResponseDTO	"Unauthorized"
+//	@Failure		404		{object}	dtos.ErrorResponseDTO	"Post not found"
+//	@Failure		500		{object}	dtos.ErrorResponseDTO	"Internal server error"
+//	@Security		BearerAuth
+//	@Router			/posts/{postID}/comments [get]
 func (h *CommentHandler) GetCommentsByPostID(w http.ResponseWriter, r *http.Request) {
 	postID := getPostIDFromContext(r.Context())
 

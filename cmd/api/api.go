@@ -67,7 +67,12 @@ func (app *application) mount() *chi.Mux {
 		r.Get("/health", app.handlers.HealthHandler.Check)
 		r.Get("/metrics", expvar.Handler().ServeHTTP)
 
-		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.Addr)
+		// Build full swagger doc URL with scheme
+		apiBaseURL := app.config.APIBaseURL
+		if apiBaseURL[:4] != "http" {
+			apiBaseURL = "http://" + apiBaseURL
+		}
+		docsURL := fmt.Sprintf("%s/v1/swagger/doc.json", apiBaseURL)
 		r.Get("/swagger/*", httpSwagger.Handler(
 			httpSwagger.URL(docsURL),
 		))
@@ -147,7 +152,6 @@ func (app *application) mount() *chi.Mux {
 }
 
 func (app *application) run(mux *chi.Mux) error {
-
 	docs.SwaggerInfo.Host = app.config.APIBaseURL
 	docs.SwaggerInfo.BasePath = "/v1"
 	docs.SwaggerInfo.Version = version

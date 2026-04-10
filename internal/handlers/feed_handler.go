@@ -23,6 +23,25 @@ func NewFeedHandler(feedService domain.FeedServiceInterface, logger logging.Logg
 	}
 }
 
+// GetUserFeed godoc
+//
+//	@Summary		Get the authenticated user's feed
+//	@Description	Returns a paginated feed of posts from followed users, scored by recency, engagement, and tag affinity
+//	@Tags			feed
+//	@Accept			json
+//	@Produce		json
+//	@Param			limit	query		int			false	"Number of posts to return (default 20)"
+//	@Param			cursor	query		string		false	"Cursor for pagination"
+//	@Param			since	query		string		false	"Filter posts created after this date (RFC3339)"
+//	@Param			until	query		string		false	"Filter posts created before this date (RFC3339)"
+//	@Param			search	query		string		false	"Search term to filter posts"
+//	@Param			tags	query		[]string	false	"Filter posts by tags"
+//	@Success		200		{object}	dtos.CursorBasedPaginationResponseDTO[dtos.FeedPostResponseDTO]
+//	@Failure		400		{object}	dtos.ErrorResponseDTO	"Bad request"
+//	@Failure		401		{object}	dtos.ErrorResponseDTO	"Unauthorized"
+//	@Failure		500		{object}	dtos.ErrorResponseDTO	"Internal server error"
+//	@Security		BearerAuth
+//	@Router			/feed/ [get]
 func (h *FeedHandler) GetUserFeed(w http.ResponseWriter, r *http.Request) {
 	user := getAuthenticatedUserFromContext(r.Context())
 
