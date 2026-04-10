@@ -69,8 +69,12 @@ func (app *application) mount() *chi.Mux {
 
 		// Build full swagger doc URL with scheme
 		apiBaseURL := app.config.APIBaseURL
-		if apiBaseURL[:4] != "http" {
-			apiBaseURL = "http://" + apiBaseURL
+		if len(apiBaseURL) < 4 || apiBaseURL[:4] != "http" {
+			scheme := "http://"
+			if app.config.Env == "production" {
+				scheme = "https://"
+			}
+			apiBaseURL = scheme + apiBaseURL
 		}
 		docsURL := fmt.Sprintf("%s/v1/swagger/doc.json", apiBaseURL)
 		r.Get("/swagger/*", httpSwagger.Handler(
